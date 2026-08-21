@@ -1,4 +1,5 @@
 import type { DocumentStructureNode } from "@/lib/db/documents-repo";
+import { linesToStructure } from "./text-structure";
 
 export interface PdfParseResult {
   text: string;
@@ -12,30 +13,8 @@ export interface PdfParseResult {
 const MIN_CHARS_PER_PAGE_FOR_TEXT_LAYER = 20; // below this average, treat the PDF as scanned/image-only
 const MAX_OCR_PAGES = 15; // time-bounded — see module doc below
 
-/** Very small heuristic to promote a plain text line to a "heading" structural node:
- *  short, no trailing sentence punctuation, and either ALL CAPS or a numbered/lettered lead-in
- *  ("1.", "Section 3", "(a)") — good enough for legal documents' fairly regular formatting
- *  without needing a layout-analysis model. */
-function classifyLine(line: string): DocumentStructureNode["type"] {
-  const trimmed = line.trim();
-  if (!trimmed) return "paragraph";
-  const isShort = trimmed.length < 90;
-  const endsWithoutPunctuation = !/[.,;:]$/.test(trimmed);
-  const looksNumbered = /^(\d+[.)]|\(?[a-zA-Z]\)|section\s+\d+|chapter\s+\d+|schedule|annexure)/i.test(trimmed);
-  const isAllCaps = trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
-  if (isShort && endsWithoutPunctuation && (looksNumbered || isAllCaps)) return "heading";
-  return "paragraph";
-}
-
 function buildStructure(pages: string[]): DocumentStructureNode[] {
-  const structure: DocumentStructureNode[] = [];
-  pages.forEach((pageText, idx) => {
-    const lines = pageText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-    for (const line of lines) {
-      structure.push({ type: classifyLine(line), text: line, page: idx + 1 });
-    }
-  });
-  return structure;
+  return pages.flatMap((pageText, idx) => linesToStructure(pageText.split(/\r?\n/), idx + 1));
 }
 
 /**

@@ -23,6 +23,14 @@ export interface DocumentRecord {
   uploadedBy?: string;
   createdAt: string;
   parsedAt?: string;
+  /** document (pdf/docx) | image (OCR) | audio | video — decides which parser the parse route dispatches to. */
+  sourceKind: "document" | "image" | "audio" | "video";
+  durationSeconds?: number;
+  /** True when OCR/transcription confidence was low (handwriting, poor scan, speech-to-text) — surfaced in the UI for human verification, never silently trusted. */
+  lowConfidence: boolean;
+  extractionNotes?: string;
+  /** Original .zip filename, when this document was expanded from an uploaded archive. */
+  sourceArchiveName?: string;
 }
 
 export interface DocumentStructureNode {
@@ -70,6 +78,9 @@ function mapDocument(r: any): DocumentRecord {
     ocrUsed: !!r.ocr_used, pageCount: r.page_count ?? undefined, extractedText: r.extracted_text ?? undefined,
     structure: r.structure ?? [], errorMessage: r.error_message ?? undefined, uploadedBy: r.uploaded_by ?? undefined,
     createdAt: r.created_at, parsedAt: r.parsed_at ?? undefined,
+    sourceKind: r.source_kind ?? "document", durationSeconds: r.duration_seconds ?? undefined,
+    lowConfidence: !!r.low_confidence, extractionNotes: r.extraction_notes ?? undefined,
+    sourceArchiveName: r.source_archive_name ?? undefined,
   };
 }
 
@@ -84,11 +95,15 @@ export const Documents = {
     const { data } = await supabase.from("documents").select("*").eq("id", id).single();
     return data ? mapDocument(data) : undefined;
   },
-  async create(d: { matterId: string; tenantId: string; fileName: string; fileType: string; fileSizeBytes: number; storagePath: string; uploadedBy: string }): Promise<DocumentRecord> {
+  async create(d: {
+    matterId: string; tenantId: string; fileName: string; fileType: string; fileSizeBytes: number;
+    storagePath: string; uploadedBy: string; sourceKind: DocumentRecord["sourceKind"]; sourceArchiveName?: string;
+  }): Promise<DocumentRecord> {
     const supabase = await createClient();
     const { data, error } = await supabase.from("documents").insert({
       matter_id: d.matterId, tenant_id: d.tenantId, file_name: d.fileName, file_type: d.fileType,
       file_size_bytes: d.fileSizeBytes, storage_path: d.storagePath, uploaded_by: d.uploadedBy, status: "uploaded",
+      source_kind: d.sourceKind, source_archive_name: d.sourceArchiveName,
     }).select().single();
     if (error || !data) throw new Error(error?.message ?? "Failed to create document record");
     return mapDocument(data);
@@ -96,6 +111,7 @@ export const Documents = {
   async update(id: string, patch: Partial<{
     status: DocumentRecord["status"]; ocrUsed: boolean; pageCount: number; extractedText: string;
     structure: DocumentStructureNode[]; errorMessage: string; parsedAt: string;
+    durationSeconds: number; lowConfidence: boolean; extractionNotes: string;
   }>): Promise<void> {
     const supabase = await createClient();
     const dbPatch: Record<string, unknown> = {};
@@ -106,6 +122,9 @@ export const Documents = {
     if (patch.structure) dbPatch.structure = patch.structure;
     if (patch.errorMessage !== undefined) dbPatch.error_message = patch.errorMessage;
     if (patch.parsedAt) dbPatch.parsed_at = patch.parsedAt;
+    if (patch.durationSeconds !== undefined) dbPatch.duration_seconds = patch.durationSeconds;
+    if (patch.lowConfidence !== undefined) dbPatch.low_confidence = patch.lowConfidence;
+    if (patch.extractionNotes !== undefined) dbPatch.extraction_notes = patch.extractionNotes;
     await supabase.from("documents").update(dbPatch).eq("id", id);
   },
 };

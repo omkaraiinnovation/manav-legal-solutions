@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runConsultation } from "@/lib/agents/consultation-agent";
+import { runConsultation, type ConsultationAttachment } from "@/lib/agents/consultation-agent";
 import { getCurrentUser } from "@/lib/session";
 import { ChatMessages, logAudit } from "@/lib/db/repo";
 import type { Jurisdiction } from "@/lib/types";
@@ -7,11 +7,12 @@ import type { Jurisdiction } from "@/lib/types";
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   const body = await req.json();
-  const { message, history, jurisdiction, matterId } = body as {
+  const { message, history, jurisdiction, matterId, attachments } = body as {
     message: string;
     history: { role: "user" | "assistant"; content: string }[];
     jurisdiction: Jurisdiction;
     matterId?: string;
+    attachments?: ConsultationAttachment[];
   };
 
   if (!message || typeof message !== "string" || !message.trim()) {
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
     history: history ?? [],
     jurisdiction: jurisdiction ?? { level: "state", state: "Bihar" },
     language: user.languagePref === "hi" ? "hi" : user.languagePref === "bilingual" ? "bilingual" : "en",
+    attachments,
   });
 
   if (matterId) {
