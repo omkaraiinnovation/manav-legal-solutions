@@ -1,5 +1,6 @@
 import type { DocumentStructureNode } from "@/lib/db/documents-repo";
 import { linesToStructure } from "./text-structure";
+import { visionTranscribe } from "./parse-image";
 
 export interface PdfParseResult {
   text: string;
@@ -11,7 +12,7 @@ export interface PdfParseResult {
 }
 
 const MIN_CHARS_PER_PAGE_FOR_TEXT_LAYER = 20; // below this average, treat the PDF as scanned/image-only
-const MAX_OCR_PAGES = 15; // time-bounded — see module doc below
+const MAX_OCR_PAGES = 8; // time-bounded — each page is a sequential vision-LLM call inside a 60s function budget
 
 function buildStructure(pages: string[]): DocumentStructureNode[] {
   return pages.flatMap((pageText, idx) => linesToStructure(pageText.split(/\r?\n/), idx + 1));
@@ -24,7 +25,9 @@ function buildStructure(pages: string[]): DocumentStructureNode[] {
  * average characters/page is below MIN_CHARS_PER_PAGE_FOR_TEXT_LAYER, the PDF
  * is treated as scanned/image-only and we fall back to rendering each page
  * (via pdfjs-dist + @napi-rs/canvas, capped at MAX_OCR_PAGES for serverless
- * time limits) and running Tesseract OCR on the rendered image.
+ * time limits) and running vision-LLM OCR on each rendered page image — not
+ * Tesseract, whose Node worker-script fails to resolve inside Vercel's
+ * serverless bundle (confirmed in production: every call hung to timeout).
  */
 export async function parsePdf(buffer: Buffer): Promise<PdfParseResult> {
   const pdfParseModule = (await import("pdf-parse")).default;
@@ -58,28 +61,22 @@ async function runOcrFallback(buffer: Buffer, pageCount: number): Promise<PdfPar
   const { createCanvas } = await import("@napi-rs/canvas");
   // pdfjs-dist's legacy Node build avoids requiring DOMMatrix/Path2D browser globals.
   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const { createWorker } = await import("tesseract.js");
 
   const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
   const pdf = await loadingTask.promise;
   const pagesToProcess = Math.min(pdf.numPages, MAX_OCR_PAGES);
   const truncated = pdf.numPages > MAX_OCR_PAGES;
 
-  const worker = await createWorker("eng");
   const pageTexts: string[] = [];
-  try {
-    for (let pageNum = 1; pageNum <= pagesToProcess; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 2.0 });
-      const canvas = createCanvas(viewport.width, viewport.height);
-      const ctx = canvas.getContext("2d");
-      await page.render({ canvasContext: ctx as any, viewport } as any).promise;
-      const pngBuffer = canvas.toBuffer("image/png");
-      const { data } = await worker.recognize(pngBuffer);
-      pageTexts.push(data.text);
-    }
-  } finally {
-    await worker.terminate();
+  for (let pageNum = 1; pageNum <= pagesToProcess; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 2.0 });
+    const canvas = createCanvas(viewport.width, viewport.height);
+    const ctx = canvas.getContext("2d");
+    await page.render({ canvasContext: ctx as any, viewport } as any).promise;
+    const pngBuffer = canvas.toBuffer("image/png");
+    const text = await visionTranscribe(pngBuffer, "image/png");
+    pageTexts.push(text);
   }
 
   return {
