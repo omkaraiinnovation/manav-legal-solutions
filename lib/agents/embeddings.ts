@@ -7,6 +7,7 @@
  * state in the UI instead of pretending RAG ran.
  */
 import OpenAI from "openai";
+import { getOpenAiApiKey } from "@/lib/env";
 
 export class EmbeddingsUnavailableError extends Error {
   constructor() {
@@ -17,13 +18,14 @@ export class EmbeddingsUnavailableError extends Error {
 
 let client: OpenAI | null = null;
 function getClient(): OpenAI {
-  if (!process.env.OPENAI_API_KEY) throw new EmbeddingsUnavailableError();
-  if (!client) client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const apiKey = getOpenAiApiKey();
+  if (!apiKey) throw new EmbeddingsUnavailableError();
+  if (!client) client = new OpenAI({ apiKey });
   return client;
 }
 
 export function embeddingsAvailable(): boolean {
-  return !!process.env.OPENAI_API_KEY;
+  return !!getOpenAiApiKey();
 }
 
 const EMBEDDING_MODEL = "text-embedding-3-small";

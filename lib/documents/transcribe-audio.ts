@@ -1,5 +1,6 @@
 import type { DocumentStructureNode } from "@/lib/db/documents-repo";
 import { linesToStructure } from "./text-structure";
+import { getOpenAiApiKey } from "@/lib/env";
 
 export interface AudioTranscribeResult {
   text: string;
@@ -23,14 +24,15 @@ export interface AudioTranscribeResult {
  * never silently presented as a verbatim record.
  */
 export async function transcribeAudio(buffer: Buffer, fileName: string, mimeType: string): Promise<AudioTranscribeResult> {
-  if (!process.env.OPENAI_API_KEY) {
+  const apiKey = getOpenAiApiKey();
+  if (!apiKey) {
     throw new Error(
       "Audio/video transcription requires an OpenAI API key. Set OPENAI_API_KEY to enable voice intake and audio/video evidence processing."
     );
   }
 
   const { default: OpenAI, toFile } = await import("openai");
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const client = new OpenAI({ apiKey });
   const file = await toFile(buffer, fileName, { type: mimeType });
 
   const res = await client.audio.transcriptions.create({

@@ -1,5 +1,6 @@
 import type { DocumentStructureNode } from "@/lib/db/documents-repo";
 import { linesToStructure } from "./text-structure";
+import { getOpenAiApiKey } from "@/lib/env";
 
 export interface ImageParseResult {
   text: string;
@@ -43,11 +44,12 @@ export async function parseImage(buffer: Buffer, mimeType: string): Promise<Imag
 /** The raw vision-model OCR call, exported so parse-pdf.ts's scanned-page fallback can reuse it
  *  per rendered page instead of duplicating the OpenAI call. */
 export async function visionTranscribe(buffer: Buffer, mimeType: string): Promise<string> {
-  if (!process.env.OPENAI_API_KEY) {
+  const apiKey = getOpenAiApiKey();
+  if (!apiKey) {
     throw new Error("OCR requires an OpenAI API key. Set OPENAI_API_KEY to enable OCR for images, scanned pages, and handwriting.");
   }
   const OpenAI = (await import("openai")).default;
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const client = new OpenAI({ apiKey });
   let res;
   try {
     res = await client.chat.completions.create({
@@ -70,13 +72,12 @@ export async function visionTranscribe(buffer: Buffer, mimeType: string): Promis
     });
   } catch (err: any) {
     // Diagnostic only — "Connection error." from the OpenAI SDK is a generic
-    // wrapper; the real cause (DNS, TLS, timeout, or something the SDK
-    // rejected client-side) lives in .cause. Logging it (never the request
-    // content or the API key) is how we find out which.
-    console.error(
-      "[parse-image] OpenAI vision call failed.",
-      JSON.stringify({ name: err?.name, message: err?.message, status: err?.status, causeMessage: err?.cause?.message, causeCode: err?.cause?.code })
-    );
+    // wrapper; the real cause (DNS, TLS, timeout, or a header the SDK
+    // rejected client-side) lives in .cause. err.cause.message is
+    // deliberately NOT logged — Node's fetch includes the full rejected
+    // header value (i.e. the API key) in that message, which is exactly how
+    // a previous version of this diagnostic leaked a key into these logs.
+    console.error("[parse-image] OpenAI vision call failed.", JSON.stringify({ name: err?.name, message: err?.message, status: err?.status, causeCode: err?.cause?.code }));
     throw err;
   }
   return res.choices[0]?.message?.content?.trim() ?? "";

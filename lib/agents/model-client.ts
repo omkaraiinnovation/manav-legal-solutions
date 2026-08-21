@@ -10,6 +10,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
+import { getAnthropicApiKey, getOpenAiApiKey } from "@/lib/env";
 
 export interface ModelMessage {
   role: "user" | "assistant";
@@ -28,8 +29,8 @@ export type LlmProvider = "anthropic" | "openai";
 export function activeProvider(): LlmProvider | null {
   const forced = process.env.MLS_LLM_PROVIDER as LlmProvider | undefined;
   if (forced === "anthropic" || forced === "openai") return forced;
-  if (process.env.ANTHROPIC_API_KEY) return "anthropic";
-  if (process.env.OPENAI_API_KEY) return "openai";
+  if (getAnthropicApiKey()) return "anthropic";
+  if (getOpenAiApiKey()) return "openai";
   return null;
 }
 
@@ -39,13 +40,13 @@ export function isLiveMode(): boolean {
 
 let anthropicClient: Anthropic | null = null;
 function getAnthropicClient(): Anthropic {
-  if (!anthropicClient) anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  if (!anthropicClient) anthropicClient = new Anthropic({ apiKey: getAnthropicApiKey() });
   return anthropicClient;
 }
 
 let openaiClient: OpenAI | null = null;
 function getOpenAIClient(): OpenAI {
-  if (!openaiClient) openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  if (!openaiClient) openaiClient = new OpenAI({ apiKey: getOpenAiApiKey() });
   return openaiClient;
 }
 
