@@ -48,23 +48,36 @@ export async function visionTranscribe(buffer: Buffer, mimeType: string): Promis
   }
   const OpenAI = (await import("openai")).default;
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const res = await client.chat.completions.create({
-    model: process.env.MLS_OPENAI_VISION_MODEL || "gpt-4o-mini",
-    max_tokens: 2000,
-    messages: [
-      {
-        role: "system",
-        content:
-          "You transcribe legal documents from images, including handwriting, as accurately as possible. Output ONLY the transcribed text, preserving line breaks, numbering, and paragraph structure. If a word or passage is illegible, write [ILLEGIBLE] in its place rather than guessing at it. Do not add commentary, summaries, or translations.",
-      },
-      {
-        role: "user",
-        content: [
-          { type: "text", text: "Transcribe this document image exactly as written." },
-          { type: "image_url", image_url: { url: `data:${mimeType};base64,${buffer.toString("base64")}` } },
-        ],
-      },
-    ],
-  });
+  let res;
+  try {
+    res = await client.chat.completions.create({
+      model: process.env.MLS_OPENAI_VISION_MODEL || "gpt-4o-mini",
+      max_tokens: 2000,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You transcribe legal documents from images, including handwriting, as accurately as possible. Output ONLY the transcribed text, preserving line breaks, numbering, and paragraph structure. If a word or passage is illegible, write [ILLEGIBLE] in its place rather than guessing at it. Do not add commentary, summaries, or translations.",
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Transcribe this document image exactly as written." },
+            { type: "image_url", image_url: { url: `data:${mimeType};base64,${buffer.toString("base64")}` } },
+          ],
+        },
+      ],
+    });
+  } catch (err: any) {
+    // Diagnostic only — "Connection error." from the OpenAI SDK is a generic
+    // wrapper; the real cause (DNS, TLS, timeout, or something the SDK
+    // rejected client-side) lives in .cause. Logging it (never the request
+    // content or the API key) is how we find out which.
+    console.error(
+      "[parse-image] OpenAI vision call failed.",
+      JSON.stringify({ name: err?.name, message: err?.message, status: err?.status, causeMessage: err?.cause?.message, causeCode: err?.cause?.code })
+    );
+    throw err;
+  }
   return res.choices[0]?.message?.content?.trim() ?? "";
 }
