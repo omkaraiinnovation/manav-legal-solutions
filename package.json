@@ -5,7 +5,7 @@
   "description": "Manav Legal Solutions — Pan-India AI Paralegal & Legal Operations Platform",
   "scripts": {
     "dev": "next dev -p 3010",
-    "build": "next build",
+    "build": "node scripts/fetch-large-seed.mjs && next build",
     "start": "next start -p 3010",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts"
