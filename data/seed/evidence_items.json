@@ -1,0 +1,24 @@
+[
+  {
+    "id": "ev-002-1",
+    "matterId": "mtr-002",
+    "fileName": "cheque_return_memo.pdf",
+    "fileType": "application/pdf",
+    "uploadedAt": "2026-07-23T06:00:00.000Z",
+    "extractedParties": ["Singh Traders", "Suresh Yadav"],
+    "extractedDates": ["2026-07-22"],
+    "extractedSections": [],
+    "ocrText": "Bank Return Memo: Cheque No. 445210 dated 15-07-2026 for Rs. 4,80,000/- returned unpaid. Reason: Funds Insufficient.",
+    "authenticity": "unverified"
+  },
+  {
+    "id": "ev-002-2",
+    "matterId": "mtr-002",
+    "fileName": "demand_notice_dispatch_receipt.pdf",
+    "fileType": "application/pdf",
+    "uploadedAt": "2026-07-25T09:00:00.000Z",
+    "extractedDates": ["2026-07-25"],
+    "chainOfCustodyNote": "Registered post receipt — original retained by firm.",
+    "authenticity": "unverified"
+  }
+]

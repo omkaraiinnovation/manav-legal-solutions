@@ -1,0 +1,29 @@
+[
+  {
+    "id": "dl-001-1",
+    "matterId": "mtr-001",
+    "label": "Send eviction demand notice (grounds under Bihar Buildings Control Act s.11)",
+    "dueDate": "2026-09-01",
+    "basis": "Bihar Buildings (Lease, Rent & Eviction) Control Act, 1982 — eviction requires prior demand where the ground is non-payment of rent. AI-estimated; confirm exact procedural pre-requisite with reviewing advocate.",
+    "source": "ai_estimated",
+    "status": "pending"
+  },
+  {
+    "id": "dl-002-1",
+    "matterId": "mtr-002",
+    "label": "File Section 138 NI Act complaint (limitation: 1 month from cause of action)",
+    "dueDate": "2026-09-09",
+    "basis": "Negotiable Instruments Act, 1881, s.142(b) — complaint must be made within one month of the date on which the cause of action arises (i.e., expiry of the 15-day notice period). AI-estimated from the chronology; lawyer must verify the exact cause-of-action date before relying on this.",
+    "source": "ai_estimated",
+    "status": "pending"
+  },
+  {
+    "id": "dl-003-1",
+    "matterId": "mtr-003",
+    "label": "Mandatory reporting / FIR registration window",
+    "dueDate": "2026-08-22",
+    "basis": "BNSS s.173 (successor to CrPC s.154) — FIR registration is mandatory without delay once a cognizable offence is disclosed (Lalita Kumari v. Govt. of U.P.). No independent limitation period for FIR registration itself; date shown flags urgency of immediate action, not a statutory deadline.",
+    "source": "ai_estimated",
+    "status": "pending"
+  }
+]

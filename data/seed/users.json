@@ -1,0 +1,47 @@
+[
+  {
+    "id": "user-platform-admin",
+    "tenantId": "tenant-mls-patna",
+    "fullName": "Platform Administrator",
+    "role": "platform_admin",
+    "languagePref": "en",
+    "email": "platform-admin@manavlegalsolutions.example",
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "user-firm-admin",
+    "tenantId": "tenant-mls-patna",
+    "fullName": "Ramesh Kumar (Firm Admin)",
+    "role": "firm_admin",
+    "languagePref": "bilingual",
+    "email": "admin@manavlegalsolutions.example",
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "user-advocate-1",
+    "tenantId": "tenant-mls-patna",
+    "fullName": "Adv. Priya Sharma",
+    "role": "advocate",
+    "languagePref": "bilingual",
+    "email": "priya.sharma@manavlegalsolutions.example",
+    "createdAt": "2026-01-05T00:00:00.000Z"
+  },
+  {
+    "id": "user-paralegal-1",
+    "tenantId": "tenant-mls-patna",
+    "fullName": "Anita Devi (Paralegal)",
+    "role": "paralegal",
+    "languagePref": "hi",
+    "email": "anita.devi@manavlegalsolutions.example",
+    "createdAt": "2026-01-10T00:00:00.000Z"
+  },
+  {
+    "id": "user-client-1",
+    "tenantId": "tenant-mls-patna",
+    "fullName": "Suresh Yadav",
+    "role": "client",
+    "languagePref": "hi",
+    "email": "suresh.yadav@example.com",
+    "createdAt": "2026-02-01T00:00:00.000Z"
+  }
+]

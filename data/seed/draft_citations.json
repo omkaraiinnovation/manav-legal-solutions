@@ -1,0 +1,5 @@
+[
+  { "id": "dc-1", "draftId": "draft-002-1", "provisionId": "prov-ni-138", "citedText": "Section 138, NI Act", "verificationStatus": "verified" },
+  { "id": "dc-2", "draftId": "draft-002-1", "provisionId": "prov-ni-142", "citedText": "Section 142, NI Act", "verificationStatus": "verified" },
+  { "id": "dc-3", "draftId": "draft-002-1", "citedText": "confirm date of service of notice on Accused", "verificationStatus": "flagged", "flagReason": "Service date of the demand notice is not yet confirmed on the matter file — required to fix the exact limitation trigger date." }
+]

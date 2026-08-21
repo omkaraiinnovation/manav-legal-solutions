@@ -1,0 +1,49 @@
+[
+  {
+    "id": "mtr-001",
+    "tenantId": "tenant-mls-patna",
+    "clientId": "user-client-1",
+    "title": "Yadav v. Prasad — Tenant Eviction Dispute, Boring Road, Patna",
+    "status": "drafting",
+    "domains": ["land_property", "civil_general"],
+    "jurisdiction": { "level": "district", "state": "Bihar", "district": "Patna", "court": "Court of the Munsif, Patna Sadar" },
+    "sensitivityLevel": "standard",
+    "facts": "Client (landlord) seeks eviction of a tenant who has not paid rent for 7 months on a commercial shop in Boring Road, Patna. Tenancy is oral, rent Rs. 15,000/month, no written lease. Tenant refuses to vacate despite repeated verbal requests.",
+    "reliefSought": "Eviction of tenant and recovery of arrears of rent.",
+    "assignedAdvocateId": "user-advocate-1",
+    "assignedParalegalId": "user-paralegal-1",
+    "createdAt": "2026-07-10T05:30:00.000Z",
+    "updatedAt": "2026-08-15T09:00:00.000Z"
+  },
+  {
+    "id": "mtr-002",
+    "tenantId": "tenant-mls-patna",
+    "clientId": "user-client-1",
+    "title": "Kumar — Cheque Dishonour Complaint against Singh Traders",
+    "status": "review",
+    "domains": ["banking_financial", "criminal"],
+    "jurisdiction": { "level": "district", "state": "Bihar", "district": "Patna", "court": "Court of the Judicial Magistrate First Class, Patna" },
+    "sensitivityLevel": "standard",
+    "facts": "Client supplied goods worth Rs. 4,80,000 to Singh Traders. Payment cheque dated 15 July 2026 was dishonoured for insufficient funds. Statutory demand notice was sent on 25 July 2026. No payment received within 15 days (period expired 9 August 2026).",
+    "reliefSought": "Prosecution under Section 138, Negotiable Instruments Act, 1881 and recovery of the cheque amount.",
+    "assignedAdvocateId": "user-advocate-1",
+    "assignedParalegalId": "user-paralegal-1",
+    "createdAt": "2026-06-20T04:00:00.000Z",
+    "updatedAt": "2026-08-18T11:00:00.000Z"
+  },
+  {
+    "id": "mtr-003",
+    "tenantId": "tenant-mls-patna",
+    "title": "In re: Minor — Assault by Family Acquaintance",
+    "status": "research",
+    "domains": ["children_juvenile", "criminal", "women_gender"],
+    "specialActTags": ["pocso", "juvenile_justice"],
+    "jurisdiction": { "level": "district", "state": "Bihar", "district": "Patna", "court": "POCSO Special Court, Patna" },
+    "sensitivityLevel": "restricted",
+    "facts": "A 14-year-old minor was assaulted by a person known to the family. Matter involves a child victim. Intake flagged multiple candidate legal frameworks pending advocate confirmation.",
+    "reliefSought": "FIR registration, protection of the minor, and prosecution of the accused.",
+    "assignedAdvocateId": "user-advocate-1",
+    "createdAt": "2026-08-12T06:00:00.000Z",
+    "updatedAt": "2026-08-19T07:00:00.000Z"
+  }
+]

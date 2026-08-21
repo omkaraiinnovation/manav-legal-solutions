@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+:root {
+  /* ── Paper & Ink (light) ── */
+  --paper: #faf6ee;
+  --paper-raised: #ffffff;
+  --paper-sunken: #f1ead9;
+  --ink: #211c16;
+  --ink-soft: #5c5347;
+  --ink-faint: #948a7a;
+  --hairline: #e2d8c3;
+
+  /* ── Brand: Oxblood + Brass ── */
+  --oxblood: #7a1328;
+  --oxblood-deep: #4f0c1a;
+  --oxblood-tint: #fbe9ec;
+  --brass: #a67c1e;
+  --brass-bright: #c99a2e;
+  --brass-tint: #fbf1dc;
+
+  /* ── Status ── */
+  --verified: #2f6b3a;
+  --verified-tint: #e7f2e7;
+  --unverified: #a86a12;
+  --unverified-tint: #fbf0dd;
+  --flagged: #a3222f;
+  --flagged-tint: #fbe7e6;
+  --info: #2b5f78;
+  --info-tint: #e6f1f5;
+
+  /* ── Sensitivity ── */
+  --restricted: #5c2065;
+  --restricted-tint: #f2e6f4;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-card: 0 1px 2px rgba(33, 28, 22, 0.06), 0 4px 16px rgba(33, 28, 22, 0.06);
+  --shadow-raised: 0 2px 6px rgba(33, 28, 22, 0.1), 0 12px 32px rgba(33, 28, 22, 0.1);
+
+  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-body: var(--font-public-sans), "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), "SFMono-Regular", Menlo, monospace;
+}
+
+:root[data-theme="dark"],
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    --paper: #16130f;
+    --paper-raised: #1f1a14;
+    --paper-sunken: #100d0a;
+    --ink: #f2ece0;
+    --ink-soft: #c7bba4;
+    --ink-faint: #8a7f6b;
+    --hairline: #362d21;
+
+    --oxblood: #d8536a;
+    --oxblood-deep: #a3324a;
+    --oxblood-tint: #2c1116;
+    --brass: #d9ab4e;
+    --brass-bright: #ecc169;
+    --brass-tint: #2a2110;
+
+    --verified: #6fbf78;
+    --verified-tint: #142a17;
+    --unverified: #e0a83f;
+    --unverified-tint: #2c2210;
+    --flagged: #e2707a;
+    --flagged-tint: #2f1416;
+    --info: #7cc0dd;
+    --info-tint: #12242c;
+
+    --restricted: #cd94d6;
+    --restricted-tint: #241227;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
+    --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #16130f;
+  --paper-raised: #1f1a14;
+  --paper-sunken: #100d0a;
+  --ink: #f2ece0;
+  --ink-soft: #c7bba4;
+  --ink-faint: #8a7f6b;
+  --hairline: #362d21;
+
+  --oxblood: #d8536a;
+  --oxblood-deep: #a3324a;
+  --oxblood-tint: #2c1116;
+  --brass: #d9ab4e;
+  --brass-bright: #ecc169;
+  --brass-tint: #2a2110;
+
+  --verified: #6fbf78;
+  --verified-tint: #142a17;
+  --unverified: #e0a83f;
+  --unverified-tint: #2c2210;
+  --flagged: #e2707a;
+  --flagged-tint: #2f1416;
+  --info: #7cc0dd;
+  --info-tint: #12242c;
+
+  --restricted: #cd94d6;
+  --restricted-tint: #241227;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  padding: 0;
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--oxblood) 5%, transparent), transparent 45%),
+    repeating-linear-gradient(0deg, transparent, transparent 39px, color-mix(in srgb, var(--ink) 2%, transparent) 40px);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+code, .font-mono, .citation {
+  font-family: var(--font-mono);
+}
+
+a { color: inherit; }
+
+::selection { background: var(--brass-tint); color: var(--ink); }
+
+/* Scrollbars — subtle, on-brand */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+
+/* Seal ring — used for the verification / trust badges (evokes an official stamp) */
+.seal-ring {
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  position: relative;
+}
+.seal-ring::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 1px dashed currentColor;
+  border-radius: 999px;
+  opacity: 0.5;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise { animation: rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade { animation: fadeIn 0.3s ease both; }
+
+.paper-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.text-ink-soft { color: var(--ink-soft); }
+.text-ink-faint { color: var(--ink-faint); }
+
+.prose-legal :is(h1, h2, h3) { font-family: var(--font-display); font-weight: 600; margin: 0.9em 0 0.35em; }
+.prose-legal h1 { font-size: 1.15em; }
+.prose-legal h2 { font-size: 1.05em; }
+.prose-legal p { margin: 0.5em 0; }
+.prose-legal ul, .prose-legal ol { margin: 0.4em 0; padding-left: 1.3em; }
+.prose-legal li { margin: 0.2em 0; }
+.prose-legal strong { font-weight: 700; color: var(--ink); }
+.prose-legal code { background: var(--paper-sunken); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+.prose-legal hr { border: none; border-top: 1px solid var(--hairline); margin: 0.9em 0; }
+.prose-legal blockquote { border-left: 2px solid var(--brass); padding-left: 0.8em; color: var(--ink-soft); margin: 0.5em 0; }

@@ -1,0 +1,10 @@
+[
+  { "state": "Bihar", "packStatus": "live", "actsSeeded": 4, "notes": "Reference State Legal Pack — Tenancy, Land Reforms, Buildings Lease/Rent/Eviction Control, Prohibition & Excise, plus Patna HC filing conventions and BSLSA legal-aid routing." },
+  { "state": "Uttar Pradesh", "packStatus": "planned", "actsSeeded": 0, "notes": "Phase 4 candidate per the roadmap — proves the State Legal Pack pattern generalizes beyond Bihar." },
+  { "state": "Jharkhand", "packStatus": "planned", "actsSeeded": 0, "notes": "Phase 4 candidate (shares legal-family lineage with Bihar, post-2000 bifurcation)." },
+  { "state": "Delhi", "packStatus": "planned", "actsSeeded": 0, "notes": "High litigation volume — Phase 4/5 candidate." },
+  { "state": "Maharashtra", "packStatus": "planned", "actsSeeded": 0, "notes": "Phase 5 candidate." },
+  { "state": "West Bengal", "packStatus": "planned", "actsSeeded": 0, "notes": "Phase 5 candidate." },
+  { "state": "Karnataka", "packStatus": "planned", "actsSeeded": 0, "notes": "Phase 5 candidate." },
+  { "state": "Tamil Nadu", "packStatus": "planned", "actsSeeded": 0, "notes": "Phase 5 candidate." }
+]
