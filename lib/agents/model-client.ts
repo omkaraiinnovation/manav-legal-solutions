@@ -73,8 +73,18 @@ export async function completeText(opts: CompleteOptions): Promise<string> {
       system: opts.system,
       messages: opts.messages.map((m) => ({ role: m.role, content: m.content })),
     });
-    const block = res.content.find((b) => b.type === "text");
-    return block && block.type === "text" ? block.text : "";
+    const textBlocks = res.content.filter((b): b is Extract<typeof b, { type: "text" }> => b.type === "text");
+    const text = textBlocks.map((b) => b.text).join("");
+    if (!text) {
+      // Diagnostic only — never throws. Helps distinguish "model produced no
+      // text block at all" (e.g. stopped mid-thinking on max_tokens) from
+      // "text block present but empty", without logging any request content.
+      console.error(
+        "[model-client] Anthropic response yielded no text.",
+        JSON.stringify({ stopReason: res.stop_reason, blockTypes: res.content.map((b) => b.type), usage: res.usage })
+      );
+    }
+    return text;
   }
 
   // OpenAI
