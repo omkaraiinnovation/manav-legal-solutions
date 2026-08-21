@@ -72,6 +72,14 @@ export async function completeText(opts: CompleteOptions): Promise<string> {
       max_tokens: opts.maxTokens ?? 2000,
       system: opts.system,
       messages: opts.messages.map((m) => ({ role: m.role, content: m.content })),
+      // Explicitly disabled: this model defaults to adaptive extended
+      // thinking, which consumes max_tokens on reasoning before any text is
+      // emitted. With the modest budgets these agents use for structured
+      // legal-triage/drafting output (1200-2000 tokens), that reliably ate
+      // the entire budget and returned an empty reply with stop_reason
+      // "max_tokens" and zero text blocks — see completeText()'s diagnostic
+      // log below, which is what caught this in production.
+      thinking: { type: "disabled" },
     });
     const textBlocks = res.content.filter((b): b is Extract<typeof b, { type: "text" }> => b.type === "text");
     const text = textBlocks.map((b) => b.text).join("");
