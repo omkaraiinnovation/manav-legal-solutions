@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Public_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/shell/Sidebar";
-import { getCurrentUser } from "@/lib/session";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -18,16 +16,15 @@ export const metadata: Metadata = {
   description: "AI-powered paralegal and legal-operations platform for Manav Legal Solutions, Patna, Bihar.",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
+/** Minimal root layout — deliberately has NO auth check and NO Sidebar. Both
+ *  the /login (public) route and the (app) route group's own layout render
+ *  under this. Putting getCurrentUser() here instead would make /login
+ *  redirect to itself whenever signed out, since every route (including
+ *  /login) renders through the root layout. */
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${fraunces.variable} ${publicSans.variable} ${plexMono.variable}`}>
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar role={user.role} />
-          <main className="flex-1 overflow-y-auto">{children}</main>
-        </div>
-      </body>
+      <body className={`${fraunces.variable} ${publicSans.variable} ${plexMono.variable}`}>{children}</body>
     </html>
   );
 }

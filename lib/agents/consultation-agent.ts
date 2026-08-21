@@ -23,11 +23,10 @@ export interface ConsultationResult {
 }
 
 export async function runConsultation(input: ConsultationInput): Promise<ConsultationResult> {
-  const sweep = runApplicableLawSweep(input.userMessage, input.jurisdiction);
-  const citedProvisionIds = sweep.rows
-    .map((r) => r.actId)
-    .filter((id): id is string => !!id)
-    .flatMap((actId) => Provisions.byAct(actId).slice(0, 2).map((p) => p.id));
+  const sweep = await runApplicableLawSweep(input.userMessage, input.jurisdiction);
+  const actIds = sweep.rows.map((r) => r.actId).filter((id): id is string => !!id);
+  const provisionsByAct = await Promise.all(actIds.map((actId) => Provisions.byAct(actId)));
+  const citedProvisionIds = provisionsByAct.flatMap((ps) => ps.slice(0, 2).map((p) => p.id));
 
   if (isLiveMode()) {
     const context = sweep.rows.map((r) => `- [${r.category}] ${r.law}: ${r.reason}`).join("\n");

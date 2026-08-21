@@ -140,6 +140,64 @@ a { color: inherit; }
 
 ::selection { background: var(--brass-tint); color: var(--ink); }
 
+/* ── Dropdowns (native <select>) ──────────────────────────────────────────
+   The browser's native popup list ignores most CSS, so the fix is to force
+   every part we CAN control — the closed control's background/text/border,
+   the focus ring, hover affordance, and (where supported) the popup list
+   itself and each <option> row — to the same paper/ink tokens as the rest
+   of the UI, so there is never a mismatched white-box-with-blue-text state. */
+select {
+  background-color: var(--paper-raised);
+  color: var(--ink);
+  border: 1.5px solid var(--hairline);
+  border-radius: 8px;
+  padding: 0.55em 2.2em 0.55em 0.75em;
+  font-family: var(--font-body);
+  font-size: 0.9em;
+  line-height: 1.3;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23948a7a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65em center;
+  background-size: 15px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+select:hover {
+  border-color: var(--ink-faint);
+  background-color: var(--paper-sunken);
+}
+select:focus-visible {
+  outline: none;
+  border-color: var(--oxblood);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--oxblood) 18%, transparent);
+}
+select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* Chromium/Firefox render <option>/<optgroup> with these when set explicitly,
+   instead of falling back to the OS theme's (often white-on-blue) defaults. */
+select option,
+select optgroup {
+  background-color: var(--paper-raised);
+  color: var(--ink);
+}
+select option:checked,
+select option:hover,
+select option:focus {
+  background-color: var(--oxblood-tint);
+  color: var(--ink);
+}
+:root[data-theme="dark"] select,
+:root:not([data-theme="light"]) select {
+  color-scheme: dark;
+}
+:root[data-theme="light"] select {
+  color-scheme: light;
+}
+
 /* Scrollbars — subtle, on-brand */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }

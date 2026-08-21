@@ -19,11 +19,9 @@ export interface VerificationFinding {
 const CITATION_PATTERN = /\b(?:Section|S\.|s\.)\s?(\d+[A-Za-z]?(?:\(\d+\))?)\s*,?\s*([A-Za-z][A-Za-z .,'&]{2,40}?(?:Act|Sanhita|Adhiniyam|Code|Constitution))\b/g;
 const EXPLICIT_FLAG_PATTERN = /\[VERIFICATION REQUIRED[^\]]*\]/g;
 
-export function runVerificationPass(draftContent: string): { findings: VerificationFinding[]; passRate: number } {
+export async function runVerificationPass(draftContent: string): Promise<{ findings: VerificationFinding[]; passRate: number }> {
   const findings: VerificationFinding[] = [];
-  const acts = Acts.all();
-  const provisions = Provisions.all();
-  const caseLaw = CaseLaws.all();
+  const [acts, provisions, caseLaw] = await Promise.all([Acts.all(), Provisions.all(), CaseLaws.all()]);
 
   // 1. Anything the drafting agent already self-flagged is recorded as flagged, not re-guessed.
   const explicitFlags = draftContent.match(EXPLICIT_FLAG_PATTERN) ?? [];

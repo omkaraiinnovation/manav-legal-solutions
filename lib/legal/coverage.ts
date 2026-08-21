@@ -1,20 +1,12 @@
-/**
- * Legal Coverage Score / "Miss Nothing" Checklist (source docs, Sections 47-48).
- *
- * Prevents the product from ever implying false completeness: every matter
- * gets an auditable checklist and a percentage score computed from what has
- * actually been checked/found, not asserted.
- */
 import type { Matter, LegalCoverageAudit } from "@/lib/types";
 import { resolveApplicableActs } from "./jurisdiction";
 import { detectApplicableAreas } from "./taxonomy";
 import { Deadlines, CaseLaws } from "@/lib/db/repo";
 
-export function computeCoverageAudit(matter: Matter): LegalCoverageAudit {
-  const { central, state, conflictFlag } = resolveApplicableActs(matter.jurisdiction, matter.domains);
+export async function computeCoverageAudit(matter: Matter): Promise<LegalCoverageAudit> {
+  const { central, state, conflictFlag } = await resolveApplicableActs(matter.jurisdiction, matter.domains);
   const detections = detectApplicableAreas(matter.facts);
-  const deadlines = Deadlines.byMatter(matter.id);
-  const caseLaw = CaseLaws.all();
+  const [deadlines, caseLaw] = await Promise.all([Deadlines.byMatter(matter.id), CaseLaws.all()]);
 
   const items: LegalCoverageAudit["items"] = [
     { label: "Constitutional provisions considered", checked: matter.domains.includes("constitutional") || true, note: "Baseline Art. 21/14 screen applied to every matter" },

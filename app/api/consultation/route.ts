@@ -26,14 +26,11 @@ export async function POST(req: NextRequest) {
   });
 
   if (matterId) {
-    ChatMessages.create({ id: crypto.randomUUID(), matterId, role: "user", content: message, createdAt: new Date().toISOString() });
-    ChatMessages.create({
-      id: crypto.randomUUID(), matterId, role: "assistant", content: result.reply,
-      citedProvisionIds: result.citedProvisionIds, createdAt: new Date().toISOString(),
-    });
+    await ChatMessages.create({ matterId, role: "user", content: message });
+    await ChatMessages.create({ matterId, role: "assistant", content: result.reply, citedProvisionIds: result.citedProvisionIds });
   }
 
-  logAudit({ tenantId: user.tenantId, actorId: user.id, action: "consultation.message", entityType: "chat", entityId: matterId ?? "standalone", metadata: { mode: result.mode } });
+  await logAudit({ tenantId: user.tenantId, actorId: user.id, action: "consultation.message", entityType: "chat", entityId: matterId ?? "standalone", metadata: { mode: result.mode } });
 
   return NextResponse.json(result);
 }

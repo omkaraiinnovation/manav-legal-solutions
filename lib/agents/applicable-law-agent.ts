@@ -21,14 +21,17 @@ export interface ApplicableLawResult {
   statePackNote: string;
 }
 
-export function runApplicableLawSweep(facts: string, jurisdiction: Jurisdiction, knownDomains: LegalDomain[] = []): ApplicableLawResult {
+export async function runApplicableLawSweep(facts: string, jurisdiction: Jurisdiction, knownDomains: LegalDomain[] = []): Promise<ApplicableLawResult> {
   const detections = detectApplicableAreas(facts);
   const suggestedDomains = [...new Set([...knownDomains, ...detections.map((d) => d.domain)])];
-  const { central, state, conflictFlag } = resolveApplicableActs(jurisdiction, suggestedDomains);
+  const [{ central, state, conflictFlag }, allActs] = await Promise.all([
+    resolveApplicableActs(jurisdiction, suggestedDomains),
+    Acts.all(),
+  ]);
   const rows: ApplicableLawRow[] = [];
 
   // Always run the general-criminal / civil baseline
-  const criminalAct = Acts.get("act-bns-2023");
+  const criminalAct = allActs.find((a) => a.id === "act-bns-2023");
   if (suggestedDomains.includes("criminal") || detections.length === 0) {
     if (criminalAct) {
       rows.push({
@@ -43,7 +46,7 @@ export function runApplicableLawSweep(facts: string, jurisdiction: Jurisdiction,
   }
 
   for (const d of detections) {
-    const act = Acts.all().find((a) => a.shortName.toLowerCase().includes(d.actShortName.toLowerCase().split(" ")[0].toLowerCase()));
+    const act = allActs.find((a) => a.shortName.toLowerCase().includes(d.actShortName.toLowerCase().split(" ")[0].toLowerCase()));
     rows.push({
       category: d.specialActTag ? "Special Act" : "Domain Law",
       law: d.actShortName,

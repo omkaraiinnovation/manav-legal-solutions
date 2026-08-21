@@ -1,10 +1,8 @@
-import { RoleSwitcher } from "./RoleSwitcher";
-import { Users } from "@/lib/db/repo";
+import { UserMenu } from "./UserMenu";
 import type { User } from "@/lib/types";
 import { isLiveMode } from "@/lib/agents/model-client";
 
 export function TopBar({ currentUser, title, subtitle }: { currentUser: User; title?: string; subtitle?: string }) {
-  const allUsers = Users.byTenant(currentUser.tenantId);
   const live = isLiveMode();
   return (
     <header
@@ -22,12 +20,12 @@ export function TopBar({ currentUser, title, subtitle }: { currentUser: User; ti
             color: live ? "var(--verified)" : "var(--info)",
             background: live ? "var(--verified-tint)" : "var(--info-tint)",
           }}
-          title={live ? "ANTHROPIC_API_KEY is set — agents call Claude live" : "No API key set — agents run in deterministic mock mode, grounded in the seeded knowledge base"}
+          title={live ? "A live LLM provider is configured — agents call it for real" : "No LLM API key set — agents run in deterministic mock mode, grounded in the seeded knowledge base"}
         >
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: "currentColor" }} />
           {live ? "Live AI Mode" : "Mock AI Mode"}
         </span>
-        <RoleSwitcher users={allUsers} currentUserId={currentUser.id} />
+        <UserMenu user={currentUser} />
       </div>
     </header>
   );

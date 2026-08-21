@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import { Matters, MatterParties, ChronologyEvents, logAudit } from "@/lib/db/repo";
 import { runApplicableLawSweep } from "@/lib/agents/applicable-law-agent";
 import { detectApplicableAreas } from "@/lib/legal/taxonomy";
-import type { Matter, MatterParty, LegalDomain, IndiaStateOrUT } from "@/lib/types";
+import type { LegalDomain, IndiaStateOrUT } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -17,13 +17,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "facts is required" }, { status: 400 });
   }
 
-  const sweep = runApplicableLawSweep(facts, { level: "state", state: state as IndiaStateOrUT }, domain ? [domain as LegalDomain] : []);
+  const sweep = await runApplicableLawSweep(facts, { level: "state", state: state as IndiaStateOrUT }, domain ? [domain as LegalDomain] : []);
   const detections = detectApplicableAreas(facts);
   const specialActTags = [...new Set(detections.map((d) => d.specialActTag).filter((t): t is NonNullable<typeof t> => !!t))];
   const sensitivity = sweep.suggestedDomains.some((d) => d === "children_juvenile" || d === "women_gender") ? "restricted" : "standard";
 
-  const matter: Matter = {
-    id: crypto.randomUUID(),
+  const matter = await Matters.create({
     tenantId: user.tenantId,
     clientId: user.role === "client" ? user.id : undefined,
     title: title?.trim() || `${clientName || "New Client"} — Intake ${new Date().toLocaleDateString("en-IN")}`,
@@ -34,31 +33,20 @@ export async function POST(req: NextRequest) {
     sensitivityLevel: sensitivity,
     facts,
     reliefSought,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  Matters.create(matter);
-
-  if (clientName) {
-    const party: MatterParty = { id: crypto.randomUUID(), matterId: matter.id, role: "client", fullName: clientName, personType };
-    MatterParties.create(party);
-  }
-  if (opposingPartyName) {
-    const party: MatterParty = { id: crypto.randomUUID(), matterId: matter.id, role: "opposite_party", fullName: opposingPartyName };
-    MatterParties.create(party);
-  }
-  if (incidentDate) {
-    ChronologyEvents.create({
-      id: crypto.randomUUID(), matterId: matter.id, eventDate: incidentDate,
-      description: "Reported incident date (from intake).", source: "manual",
-    });
-  }
-  ChronologyEvents.create({
-    id: crypto.randomUUID(), matterId: matter.id, eventDate: new Date().toISOString().slice(0, 10),
-    description: "Matter opened via Legal Matter Intake.", source: "manual",
   });
 
-  logAudit({ tenantId: user.tenantId, actorId: user.id, action: "matter.create", entityType: "matter", entityId: matter.id });
+  if (clientName) {
+    await MatterParties.create({ matterId: matter.id, role: "client", fullName: clientName, personType });
+  }
+  if (opposingPartyName) {
+    await MatterParties.create({ matterId: matter.id, role: "opposite_party", fullName: opposingPartyName });
+  }
+  if (incidentDate) {
+    await ChronologyEvents.create({ matterId: matter.id, eventDate: incidentDate, description: "Reported incident date (from intake).", source: "manual" });
+  }
+  await ChronologyEvents.create({ matterId: matter.id, eventDate: new Date().toISOString().slice(0, 10), description: "Matter opened via Legal Matter Intake.", source: "manual" });
+
+  await logAudit({ tenantId: user.tenantId, actorId: user.id, action: "matter.create", entityType: "matter", entityId: matter.id });
 
   return NextResponse.json({ matter, sweep });
 }

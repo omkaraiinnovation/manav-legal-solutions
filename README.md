@@ -11,17 +11,17 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3010. No environment variables are required to run — the app starts in **local-first, mock-AI mode**:
-- Data persists to `/data/store` (JSON files, auto-seeded from `/data/seed` on first read).
-- AI agents (Consultation, Drafting, Verification, Applicable-Law) run in a deterministic mode grounded entirely in the seeded knowledge base — no external calls, no fabricated citations.
+Open http://localhost:3010. This is a real, backend-backed application — it requires a provisioned Supabase project (Postgres + pgvector + Storage + Auth). Copy `.env.example` to `.env.local` and fill in `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`, apply the migrations under `supabase/migrations`, then sign up at `/login`. The first confirmed user is auto-promoted to `firm_admin`; every account after that starts as `client` until an admin changes its role.
 
-A role switcher in the top bar lets you try every persona (Platform Admin, Firm Admin, Advocate, Paralegal, Client) without setting up auth.
+- Auth is real Supabase Auth (email/password), enforced by `middleware.ts` — there is no demo role switcher and no unauthenticated access to any route except `/login`.
+- Every table is tenant/matter-scoped via Postgres Row-Level Security — the app never uses a service-role key, so isolation is enforced by the database itself, not application code.
+- Document upload → parse (PDF/DOCX, with OCR fallback for scanned PDFs) → chunk → embed → store runs as a real pipeline (`lib/documents/`, `lib/agents/embeddings.ts`, `app/api/documents/*`), and matter Q&A (`lib/agents/qa-agent.ts`) retrieves real chunks by vector similarity before generating an answer — if retrieval comes back empty, it says so instead of fabricating.
 
-## Going Live
+## AI Providers (pluggable, dual)
 
-**AI**: set `ANTHROPIC_API_KEY` (see `.env.example`) — every agent switches to real Claude calls with no code changes.
+Set `ANTHROPIC_API_KEY` and/or `OPENAI_API_KEY` (see `.env.example`). The provider is auto-detected — Anthropic is preferred when both are present. **With neither key set, every agent runs in deterministic mock mode** grounded only in the seeded knowledge base, and Q&A explicitly reports "insufficient information" rather than inventing an answer — the "No False Completeness" rule holds in both modes. Embeddings (for RAG chunking/retrieval) currently require `OPENAI_API_KEY` regardless of which provider answers questions, since that's the only embeddings API wired up (`lib/agents/embeddings.ts`).
 
-**Database**: provision a Supabase project and apply `supabase/migrations/0001_init.sql`, then set `MLS_DATA_MODE=supabase` plus the Supabase env vars. The local JSON schema mirrors this migration exactly.
+Credentials are read server-side only (`process.env`, Route Handlers / Server Components) and are never sent to the browser.
 
 ## What's Seeded vs. What's a Placeholder
 
@@ -35,5 +35,4 @@ Nothing is ever presented as complete or infallible — see the "No False Comple
 ## Scripts
 - `npm run dev` — dev server (port 3010)
 - `npm run build` / `npm run start`
-- `npm run seed` — reset local data back to the seed files
 - `npm run lint`

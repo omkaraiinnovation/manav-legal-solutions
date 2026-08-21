@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  serverExternalPackages: ["@anthropic-ai/sdk"],
+  serverExternalPackages: ["@anthropic-ai/sdk", "openai", "@napi-rs/canvas", "tesseract.js", "pdfjs-dist", "pdf-parse", "mammoth"],
 };
 
 export default nextConfig;

@@ -16,13 +16,26 @@ What *is* built now: the full application surface, workflow, and data model for 
 ## Stack
 ```
 CLIENT (Browser)         Next.js 16 (App Router) + React 19 + TS + Tailwind v4
-APPLICATION LAYER        Next.js Route Handlers (app/api/*), demo cookie session (lib/session.ts)
-AI ORCHESTRATION LAYER   lib/agents/* — pluggable: ANTHROPIC_API_KEY unset → deterministic mock
-                         mode grounded in /data/seed; set → live Claude calls, same call sites
-DATA LAYER               Local-first: lib/db/store.ts (JSON files under /data/store, auto-seeded
-                         from /data/seed). Schema mirrors supabase/migrations/0001_init.sql 1:1 —
-                         switching MLS_DATA_MODE=supabase is a data-layer swap only.
-LEGAL KNOWLEDGE BASE     data/seed/{acts,provisions,case_law,legal_relationships}.json
+AUTH                     Supabase Auth (email/password), @supabase/ssr cookie sessions,
+                         enforced route-by-route in middleware.ts (lib/supabase/middleware.ts)
+APPLICATION LAYER        Next.js Route Handlers (app/api/*) + Server Components, session
+                         resolved per-request via lib/session.ts (real user, not a demo switcher)
+AI ORCHESTRATION LAYER   lib/agents/* — pluggable dual-provider: ANTHROPIC_API_KEY and/or
+                         OPENAI_API_KEY, auto-detected (lib/agents/model-client.ts); neither
+                         set → deterministic mock mode grounded in the seeded KB, same call sites
+RAG / DOCUMENT PIPELINE  lib/documents/ (PDF/DOCX parse, OCR fallback via pdfjs-dist +
+                         @napi-rs/canvas + tesseract.js, chunking) → lib/agents/embeddings.ts
+                         (OpenAI text-embedding-3-small) → pgvector cosine search
+                         (match_document_chunks / match_provisions RPCs) → lib/agents/qa-agent.ts
+                         assembles cited context for the LLM; empty retrieval → explicit
+                         "insufficient information", never a fabricated answer
+DATA LAYER               Supabase Postgres, queried via lib/db/repo.ts + lib/db/documents-repo.ts
+                         as the authenticated user (@supabase/ssr) — every table is tenant/matter-
+                         scoped by Row-Level Security; the app holds no service-role key anywhere.
+                         pgvector extension for embeddings; Supabase Storage (private bucket,
+                         path-prefix RLS) for uploaded documents.
+LEGAL KNOWLEDGE BASE     acts / provisions / case_law / legal_relationships tables (seeded via
+                         migration, same content that previously lived in data/seed/*.json)
 ```
 
 ## AI Agent Layer

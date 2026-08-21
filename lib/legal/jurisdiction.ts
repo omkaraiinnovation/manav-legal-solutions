@@ -1,15 +1,3 @@
-/**
- * Jurisdiction Engine (source docs, Section 2 / 36-38).
- *
- * Resolves which State Legal Pack, court hierarchy and special-forum rules
- * apply to a matter. This is the pragmatic, relational-schema version of the
- * "Article 254 repugnancy" logic described in the research docs: it flags
- * when both a Central and a State Act plausibly apply so the advocate
- * resolves precedence, rather than silently picking one. Automating the
- * repugnancy *test* itself (Art. 254(2) presidential-assent lookups) is a
- * Phase 4+ capability once the state Acts are ingested with that metadata —
- * see docs/blueprint.md.
- */
 import type { IndiaStateOrUT, Jurisdiction, LegalDomain } from "@/lib/types";
 import { Acts } from "@/lib/db/repo";
 
@@ -53,8 +41,8 @@ export function suggestForum(domains: LegalDomain[], specialActTags: string[] = 
 
 /** Resolves candidate central + state Acts for a jurisdiction + domain set — the core of the
  *  "never assume a Central Act operates in isolation" rule. */
-export function resolveApplicableActs(jurisdiction: Jurisdiction, domains: LegalDomain[]) {
-  const all = Acts.all();
+export async function resolveApplicableActs(jurisdiction: Jurisdiction, domains: LegalDomain[]) {
+  const all = await Acts.all();
   const central = all.filter((a) => a.jurisdictionLevel === "central" && a.domains.some((d) => domains.includes(d)));
   const state = jurisdiction.state
     ? all.filter((a) => a.jurisdictionLevel === "state" && a.state === jurisdiction.state && a.domains.some((d) => domains.includes(d)))

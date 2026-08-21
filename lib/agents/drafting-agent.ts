@@ -22,7 +22,7 @@ export interface DraftGenerationResult {
 
 export async function generateDraft(input: DraftGenerationInput): Promise<DraftGenerationResult> {
   const { matter, documentType, variables } = input;
-  const sweep = runApplicableLawSweep(matter.facts, matter.jurisdiction, matter.domains);
+  const sweep = await runApplicableLawSweep(matter.facts, matter.jurisdiction, matter.domains);
 
   if (isLiveMode()) {
     const context = sweep.rows.map((r) => `- [${r.category}] ${r.law}: ${r.reason}`).join("\n");

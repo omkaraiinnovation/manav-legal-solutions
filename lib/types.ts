@@ -308,19 +308,9 @@ export interface Deadline {
   status: "pending" | "met" | "missed" | "extended";
 }
 
-export interface EvidenceItem {
-  id: string;
-  matterId: string;
-  fileName: string;
-  fileType: string;
-  uploadedAt: string;
-  extractedParties?: string[];
-  extractedDates?: string[];
-  extractedSections?: string[];
-  ocrText?: string;
-  chainOfCustodyNote?: string;
-  authenticity: "unverified" | "verified";
-}
+// Document/evidence upload types are superseded by DocumentRecord and
+// DocumentChunkRecord in lib/db/documents-repo.ts (the real RAG pipeline's
+// object model — parsed structure, chunks, embeddings, source metadata).
 
 // ─────────────────────────────────────────────────────────────────────────
 // Users, Tenancy, Audit

@@ -1,7 +1,0 @@
-[
-  { "id": "mp-001-1", "matterId": "mtr-001", "role": "client", "fullName": "Suresh Yadav", "personType": "individual", "address": "Boring Road, Patna, Bihar", "contact": { "phone": "+91-9XXXXXXXX1" } },
-  { "id": "mp-001-2", "matterId": "mtr-001", "role": "opposite_party", "fullName": "Ramesh Prasad", "personType": "individual", "address": "Boring Road, Patna, Bihar" },
-  { "id": "mp-002-1", "matterId": "mtr-002", "role": "client", "fullName": "Suresh Yadav", "personType": "individual", "address": "Patna, Bihar" },
-  { "id": "mp-002-2", "matterId": "mtr-002", "role": "opposite_party", "fullName": "Singh Traders (Prop. Manoj Singh)", "personType": "company", "address": "Kankarbagh, Patna, Bihar" },
-  { "id": "mp-003-1", "matterId": "mtr-003", "role": "petitioner", "fullName": "[Minor — identity restricted]", "personType": "minor", "address": "Patna, Bihar" }
-]
