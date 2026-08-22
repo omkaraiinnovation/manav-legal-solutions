@@ -5,14 +5,17 @@ import { Pill, SensitivityBadge, VerificationBadge } from "@/components/ui/Badge
 import { ApplicableLawTable } from "@/components/legal/ApplicableLawTable";
 import { DocumentUpload } from "@/components/documents/DocumentUpload";
 import { QaPanel } from "@/components/documents/QaPanel";
+import { EvidencePanel } from "@/components/matters/EvidencePanel";
+import { SmartSearchPanel } from "@/components/matters/SmartSearchPanel";
 import { getCurrentUser } from "@/lib/session";
 import { Matters, MatterParties, ChronologyEvents, Deadlines, Drafts } from "@/lib/db/repo";
 import { Documents, QaHistory } from "@/lib/db/documents-repo";
+import { EvidenceAnalyses } from "@/lib/db/evidence-repo";
 import { runApplicableLawSweep } from "@/lib/agents/applicable-law-agent";
 import { computeCoverageAudit } from "@/lib/legal/coverage";
 import { formatDateDisplay, daysUntil } from "@/lib/legal/date-utils";
 import { notFound } from "next/navigation";
-import { Gavel, FileText, Users2, CheckCircle2, XCircle, MessagesSquare } from "lucide-react";
+import { Gavel, FileText, Users2, CheckCircle2, XCircle, MessagesSquare, SearchCode, ShieldAlert } from "lucide-react";
 
 export default async function MatterDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,13 +23,14 @@ export default async function MatterDetailPage({ params }: { params: Promise<{ i
   const matter = await Matters.get(id);
   if (!matter) notFound();
 
-  const [parties, chronology, deadlines, drafts, documents, qaHistory, sweep, coverage] = await Promise.all([
+  const [parties, chronology, deadlines, drafts, documents, qaHistory, evidenceAnalysis, sweep, coverage] = await Promise.all([
     MatterParties.byMatter(id),
     ChronologyEvents.byMatter(id),
     Deadlines.byMatter(id),
     Drafts.byMatter(id),
     Documents.byMatter(id),
     QaHistory.byMatter(id),
+    EvidenceAnalyses.latestForMatter(id),
     runApplicableLawSweep(matter.facts, matter.jurisdiction, matter.domains),
     computeCoverageAudit(matter),
   ]);
@@ -68,6 +72,18 @@ export default async function MatterDetailPage({ params }: { params: Promise<{ i
         <section>
           <SectionHeader eyebrow="Retrieval-Augmented Q&A" title="Ask About This Matter" action={<span className="flex items-center gap-1 text-xs text-ink-faint"><MessagesSquare size={12} /> documents + legal knowledge base</span>} />
           <QaPanel matterId={id} initialHistory={qaHistory} />
+        </section>
+
+        {/* Smart Search — natural-language + exact-text search over this matter's documents */}
+        <section>
+          <SectionHeader eyebrow="Document Search" title="Smart Search" action={<span className="flex items-center gap-1 text-xs text-ink-faint"><SearchCode size={12} /> semantic + exact-text</span>} />
+          <SmartSearchPanel matterId={id} />
+        </section>
+
+        {/* Evidence Intelligence — fact matrix, contradiction detection, missing-support flags */}
+        <section>
+          <SectionHeader eyebrow="Evidence Intelligence" title="Fact Matrix & Contradiction Check" action={<span className="flex items-center gap-1 text-xs text-ink-faint"><ShieldAlert size={12} /> facts + documents cross-referenced</span>} />
+          <EvidencePanel matterId={id} initial={evidenceAnalysis ?? null} />
         </section>
 
         {/* Legal Coverage Score */}

@@ -156,6 +156,20 @@ export const DocumentChunks = {
     if (error) throw new Error(error.message);
     return (data ?? []) as { id: string; document_id: string; chunk_index: number; content: string; page_number: number | null; section_heading: string | null; metadata: any; similarity: number }[];
   },
+  /** Plain substring search — every whitespace-split term must appear in the chunk (AND). Complements semanticSearch
+   *  for exact tokens embeddings recall poorly on (section numbers, case numbers, precise figures). */
+  async keywordSearch(matterId: string, query: string, matchCount = 8): Promise<DocumentChunkRecord[]> {
+    const terms = query.split(/\s+/).map((t) => t.trim()).filter((t) => t.length >= 2).slice(0, 6);
+    if (terms.length === 0) return [];
+    const supabase = await createClient();
+    let q = supabase.from("document_chunks").select("*").eq("matter_id", matterId);
+    for (const term of terms) q = q.ilike("content", `%${term.replace(/[%_]/g, "\\$&")}%`);
+    const { data } = await q.limit(matchCount);
+    return (data ?? []).map((r: any) => ({
+      id: r.id, documentId: r.document_id, matterId: r.matter_id, tenantId: r.tenant_id, chunkIndex: r.chunk_index,
+      content: r.content, pageNumber: r.page_number ?? undefined, sectionHeading: r.section_heading ?? undefined, metadata: r.metadata ?? {},
+    }));
+  },
 };
 
 export const KnowledgeBaseSearch = {
