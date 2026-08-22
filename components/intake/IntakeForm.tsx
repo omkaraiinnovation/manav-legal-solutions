@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { INDIA_STATES_AND_UTS, LEGAL_DOMAINS, LEGAL_DOMAIN_LABELS } from "@/lib/types";
 import type { IndiaStateOrUT, LegalDomain } from "@/lib/types";
-import { Loader2, ArrowRight, Mic, Square, X } from "lucide-react";
+import { Loader2, ArrowRight, Mic, Square, X, Paperclip } from "lucide-react";
 import { ACCEPT_ATTRIBUTE, HUMAN_SUPPORTED_SUMMARY } from "@/lib/documents/mime";
 import { useVoiceRecorder, formatSeconds } from "@/lib/hooks/useVoiceRecorder";
 
@@ -30,6 +30,9 @@ export function IntakeForm() {
   const [files, setFiles] = useState<File[]>([]);
   const [transcribing, setTranscribing] = useState(false);
   const [transcribeError, setTranscribeError] = useState<string | null>(null);
+  const factFileInputRef = useRef<HTMLInputElement>(null);
+  const [extractingFacts, setExtractingFacts] = useState(false);
+  const [extractFactsError, setExtractFactsError] = useState<string | null>(null);
   const [form, setForm] = useState({
     personType: "individual", clientName: "", opposingPartyName: "",
     facts: "", state: "Bihar" as IndiaStateOrUT, district: "", court: "",
@@ -59,6 +62,42 @@ export function IntakeForm() {
       setTranscribing(false);
     }
   });
+
+  /** Reads PDF/Word/image/etc. files dropped onto the facts step directly into the narrative —
+   *  the same "don't make the user retype what the system can read" principle as the mic button,
+   *  just for documents instead of speech. The files are also kept for real upload once the
+   *  matter exists (same `files` state step 6 already uploads), so a source like an FIR PDF
+   *  becomes both part of the narrative now and a real, OCR'd, searchable matter document later. */
+  async function handleFactFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+    const picked = Array.from(fileList);
+    setFiles((prev) => [...prev, ...picked]);
+    setExtractFactsError(null);
+    setExtractingFacts(true);
+    try {
+      for (const file of picked) {
+        try {
+          const fd = new FormData();
+          fd.append("file", file);
+          const res = await fetch("/api/ingest", { method: "POST", body: fd });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `Could not read "${file.name}".`);
+          for (const attachment of data.attachments ?? []) {
+            if (!attachment.text) continue;
+            const block = `--- ${attachment.fileName ?? file.name} ---\n${attachment.text}`;
+            setForm((f) => ({ ...f, facts: f.facts ? `${f.facts}\n\n${block}` : block }));
+          }
+        } catch (err) {
+          setExtractFactsError((prev) => {
+            const msg = err instanceof Error ? err.message : `Could not read "${file.name}".`;
+            return prev ? `${prev} ${msg}` : msg;
+          });
+        }
+      }
+    } finally {
+      setExtractingFacts(false);
+    }
+  }
 
   async function submit() {
     setSubmitting(true);
@@ -136,9 +175,19 @@ export function IntakeForm() {
         {step === 2 && (
           <>
             <Field label="Matter Title (optional)"><input className={inputClass} style={inputStyle} value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="e.g. Yadav v. Prasad — Eviction" /></Field>
-            <Field label="What happened?" help="Describe in your own words, or speak it — this drives the applicable-law sweep and drafting.">
+            <Field label="What happened?" help={`Describe in your own words, speak it, or attach a document (${HUMAN_SUPPORTED_SUMMARY}) and its contents will be read into the narrative automatically.`}>
               <div className="relative">
-                <textarea className={inputClass} style={{ ...inputStyle, paddingRight: "2.75rem" }} rows={6} value={form.facts} onChange={(e) => update("facts", e.target.value)} placeholder="Chronological narrative of facts, or click the mic to speak it…" />
+                <textarea className={inputClass} style={{ ...inputStyle, paddingRight: "5rem" }} rows={6} value={form.facts} onChange={(e) => update("facts", e.target.value)} placeholder="Chronological narrative of facts, or click the mic to speak it, or attach a document…" />
+                <input ref={factFileInputRef} type="file" multiple className="hidden" accept={ACCEPT_ATTRIBUTE} onChange={(e) => { handleFactFiles(e.target.files); e.target.value = ""; }} />
+                <button
+                  type="button"
+                  onClick={() => factFileInputRef.current?.click()}
+                  title="Attach a document — its contents will be read into the narrative"
+                  className="absolute right-11 top-2 flex h-8 w-8 items-center justify-center rounded-[8px] border"
+                  style={inputStyle}
+                >
+                  <Paperclip size={14} />
+                </button>
                 <button
                   type="button"
                   onClick={recorder.status === "recording" ? recorder.stop : recorder.start}
@@ -155,6 +204,8 @@ export function IntakeForm() {
                 </span>
               )}
               {transcribing && <span className="mt-1 flex items-center gap-1.5 text-xs text-ink-faint"><Loader2 size={11} className="animate-spin" /> Transcribing…</span>}
+              {extractingFacts && <span className="mt-1 flex items-center gap-1.5 text-xs text-ink-faint"><Loader2 size={11} className="animate-spin" /> Reading document…</span>}
+              {extractFactsError && <span className="mt-1 block text-xs" style={{ color: "var(--flagged)" }}>{extractFactsError}</span>}
               {(transcribeError || recorder.error) && <span className="mt-1 block text-xs" style={{ color: "var(--flagged)" }}>{transcribeError || recorder.error}</span>}
             </Field>
             <Field label="Relief Sought"><textarea className={inputClass} style={inputStyle} rows={2} value={form.reliefSought} onChange={(e) => update("reliefSought", e.target.value)} placeholder="What outcome does the client want?" /></Field>
