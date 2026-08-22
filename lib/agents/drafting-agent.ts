@@ -8,6 +8,7 @@ import type { Matter, DocumentType, Draft } from "@/lib/types";
 import { completeText, isLiveMode } from "./model-client";
 import { MASTER_SYSTEM_PROMPT, STANDARD_DISCLAIMER, currentDateContext } from "./prompts";
 import { runApplicableLawSweep } from "./applicable-law-agent";
+import { researchJudgments, judgmentResearchAvailable, type JudgmentResearchResult } from "./judgment-research-agent";
 
 export interface DraftGenerationInput {
   matter: Matter;
@@ -18,6 +19,9 @@ export interface DraftGenerationInput {
 export interface DraftGenerationResult {
   content: string;
   mode: "live" | "mock";
+  /** Set only when live judicial research actually ran and found something — persisted by the
+   *  caller as a judgment_research row against the new draft, so it shows in the review console. */
+  judgmentResearch?: { query: string; result: JudgmentResearchResult };
 }
 
 export async function generateDraft(input: DraftGenerationInput): Promise<DraftGenerationResult> {
@@ -26,14 +30,49 @@ export async function generateDraft(input: DraftGenerationInput): Promise<DraftG
 
   if (isLiveMode()) {
     const context = sweep.rows.map((r) => `- [${r.category}] ${r.law}: ${r.reason}`).join("\n");
+
+    // Judicial research runs BEFORE drafting so real citations can be woven into the
+    // relevant paragraphs while the draft is written, not bolted on after the fact
+    // (spec: "Facts + Documents + Applicable Law + Sections + Judicial Research ->
+    // Final Draft", not "Facts + Acts/Sections -> Final Draft"). Non-fatal on
+    // failure — a draft without case law is still useful; a draft that fails to
+    // generate at all because research timed out is not.
+    let judgmentResult: JudgmentResearchResult | undefined;
+    if (judgmentResearchAvailable()) {
+      try {
+        const topLaws = sweep.rows.slice(0, 3).map((r) => r.law).join("; ");
+        judgmentResult = await researchJudgments({
+          query: `${documentType.name} — ${matter.facts}`,
+          jurisdictionState: matter.jurisdiction.state,
+          actContext: topLaws || undefined,
+          maxSearches: 4,
+        });
+      } catch {
+        judgmentResult = undefined;
+      }
+    }
+
+    const judgmentContext =
+      judgmentResult && judgmentResult.judgments.length > 0
+        ? `\n\n[RELEVANT JUDICIAL AUTHORITIES — real judgments found via live research just now. Cite by case name + citation ONLY where a specific authority genuinely supports a specific proposition you are drafting, integrated into that paragraph — never as a dumped list at the end, and never force one in where none of these are truly on point. Supreme Court authority is binding nationwide; High Court authority is binding only within ${matter.jurisdiction.state ?? "its own"} jurisdiction and merely persuasive elsewhere — say which is which when you cite it. Cite at most 3-5 of the strongest ones; more is not better.]\n` +
+          judgmentResult.judgments
+            .slice(0, 6)
+            .map((j, i) => `${i + 1}. ${j.caseTitle}${j.citation ? ` (${j.citation})` : ""} — ${j.courtName}${j.dateText ? `, ${j.dateText}` : ""}. ${j.relevanceExplanation}`)
+            .join("\n")
+        : "";
+
     const system = `${currentDateContext()}\n\n${MASTER_SYSTEM_PROMPT}\n\nYou are now in MODE B (Drafting). Generate: ${documentType.name}.
 Mandatory sections, in order: ${documentType.templateSkeletonSections.join(" → ")}.
 Every substantive legal assertion must cite a specific provision from the sweep below, or be marked [VERIFICATION REQUIRED: Source Not Confirmed]. Output clean Markdown suitable for a court filing draft. End with the standard disclaimer.
 
-[APPLICABLE-LAW SWEEP]\n${context}`;
+[APPLICABLE-LAW SWEEP]\n${context}${judgmentContext}`;
     const userMsg = `Matter facts: ${matter.facts}\nRelief sought: ${matter.reliefSought ?? "Not specified"}\nJurisdiction: ${JSON.stringify(matter.jurisdiction)}\nVariables provided: ${JSON.stringify(variables, null, 2)}`;
-    const content = await completeText({ system, messages: [{ role: "user", content: userMsg }], model: "primary", maxTokens: 3000 });
-    return { content, mode: "live" };
+    const content = await completeText({ system, messages: [{ role: "user", content: userMsg }], model: "primary", maxTokens: 3500 });
+    return {
+      content,
+      mode: "live",
+      judgmentResearch: judgmentResult && judgmentResult.judgments.length > 0 ? { query: `${documentType.name} — ${matter.facts}`, result: judgmentResult } : undefined,
+    };
   }
 
   // Deterministic mock mode — assembles the template skeleton with the provided

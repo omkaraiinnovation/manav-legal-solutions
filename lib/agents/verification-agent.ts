@@ -7,6 +7,7 @@
  */
 import { Acts, Provisions, CaseLaws } from "@/lib/db/repo";
 import type { DraftCitation } from "@/lib/types";
+import type { JudgmentResult } from "./judgment-research-agent";
 
 export interface VerificationFinding {
   citedText: string;
@@ -18,8 +19,16 @@ export interface VerificationFinding {
 
 const CITATION_PATTERN = /\b(?:Section|S\.|s\.)\s?(\d+[A-Za-z]?(?:\(\d+\))?)\s*,?\s*([A-Za-z][A-Za-z .,'&]{2,40}?(?:Act|Sanhita|Adhiniyam|Code|Constitution))\b/g;
 const EXPLICIT_FLAG_PATTERN = /\[VERIFICATION REQUIRED[^\]]*\]/g;
+/** Loosely matches "Party Name v. Other Party" / "vs." case-name mentions, to catch
+ *  citations the drafting agent produced that aren't in the known-case checks below. */
+const CASE_NAME_PATTERN = /\b([A-Z][A-Za-z.&' ]{2,60}?)\s+v\.?s?\.?\s+([A-Z][A-Za-z.&' ]{2,60}?)(?=[,.\n(]|$)/g;
 
-export async function runVerificationPass(draftContent: string): Promise<{ findings: VerificationFinding[]; passRate: number }> {
+/** `liveJudgments`: the real, source-linked judgments a live judicial-research pass actually
+ *  offered the drafting agent for this draft (spec §20 "citation accuracy... unsupported legal
+ *  propositions"). A case name the draft cites that appears here is confirmed against a real
+ *  search result, not just trusted; one that appears in neither this list nor the seeded
+ *  case_law table is flagged as an unconfirmed citation rather than silently accepted. */
+export async function runVerificationPass(draftContent: string, liveJudgments: JudgmentResult[] = []): Promise<{ findings: VerificationFinding[]; passRate: number }> {
   const findings: VerificationFinding[] = [];
   const [acts, provisions, caseLaw] = await Promise.all([Acts.all(), Provisions.all(), CaseLaws.all()]);
 
@@ -64,6 +73,40 @@ export async function runVerificationPass(draftContent: string): Promise<{ findi
     } else if (draftContent.includes(cl.citation)) {
       findings.push({ citedText: cl.citation, caseLawId: cl.id, verificationStatus: cl.status === "overruled" ? "flagged" : "verified", flagReason: cl.status === "overruled" ? `${cl.caseTitle} is flagged as ${cl.status} — do not rely on this as current law.` : undefined });
     }
+  }
+
+  // 4. Case names offered to the drafting agent by live judicial research (spec §20): if the
+  //    draft actually cited one, that's a real, source-linked confirmation, not a guess — record
+  //    it as verified with the source URL so the reviewer can open the original judgment directly.
+  const confirmedCaseNames = new Set<string>();
+  for (const j of liveJudgments) {
+    const shortTitle = j.caseTitle.split(/\s+v\.?s?\.?\s+/i)[0].trim();
+    if (shortTitle.length > 3 && draftContent.includes(shortTitle)) {
+      confirmedCaseNames.add(shortTitle.toLowerCase());
+      findings.push({
+        citedText: j.caseTitle, verificationStatus: "verified",
+        flagReason: `Confirmed via live judicial research (${j.courtName}${j.citation ? `, ${j.citation}` : ""}): ${j.sourceUrl}`,
+      });
+    }
+  }
+
+  // 5. Any other "X v. Y"-shaped case name in the draft that matches neither the seeded case_law
+  //    table nor a live research result is an unconfirmed citation — flagged, not trusted, since an
+  //    unconfirmed case name is exactly how a fabricated precedent would look.
+  const knownShortTitles = new Set(caseLaw.map((cl) => cl.caseTitle.split(" v. ")[0].toLowerCase()));
+  let caseMatch: RegExpExecArray | null;
+  const seenCaseNames = new Set<string>();
+  while ((caseMatch = CASE_NAME_PATTERN.exec(draftContent)) !== null) {
+    const full = caseMatch[0].trim();
+    const partyOne = caseMatch[1].trim();
+    const key = partyOne.toLowerCase();
+    if (seenCaseNames.has(key) || full.length > 90) continue; // avoid re-flagging the same name twice or matching unrelated prose
+    seenCaseNames.add(key);
+    if (knownShortTitles.has(key) || confirmedCaseNames.has(key)) continue; // already handled by an earlier pass
+    findings.push({
+      citedText: full, verificationStatus: "unverified",
+      flagReason: `"${full}" does not match any judgment in the seeded knowledge base or this draft's live judicial research results — confirm this citation independently before relying on it.`,
+    });
   }
 
   const verifiedCount = findings.filter((f) => f.verificationStatus === "verified").length;

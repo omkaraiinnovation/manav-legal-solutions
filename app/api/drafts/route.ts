@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { Matters, DocumentTypes, Drafts, DraftCitations, logAudit } from "@/lib/db/repo";
+import { JudgmentResearch } from "@/lib/db/judgment-repo";
 import { generateDraft } from "@/lib/agents/drafting-agent";
 import { runVerificationPass } from "@/lib/agents/verification-agent";
+
+export const maxDuration = 120; // drafting now runs a live judicial-research pass first
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -14,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   const generation = await generateDraft({ matter, documentType, variables: variables ?? {} });
-  const verification = await runVerificationPass(generation.content);
+  const verification = await runVerificationPass(generation.content, generation.judgmentResearch?.result.judgments ?? []);
   const verifiedCount = verification.findings.filter((f) => f.verificationStatus === "verified").length;
   const coverageScore = verification.findings.length ? Math.round((verifiedCount / verification.findings.length) * 100) : 100;
 
@@ -34,7 +37,23 @@ export async function POST(req: NextRequest) {
   }));
   if (citations.length) await DraftCitations.bulkCreate(citations);
 
-  await logAudit({ tenantId: user.tenantId, actorId: user.id, action: "draft.generate", entityType: "draft", entityId: draft.id, metadata: { mode: generation.mode, coverageScore } });
+  // Persist the judgments the drafting agent actually had available, tied to this
+  // draft — the review console's Judicial Enhancement Review panel reads
+  // judgment_research by draft_id, so citations woven into the draft are visible
+  // there with full source links automatically, no separate feature needed.
+  if (generation.judgmentResearch) {
+    await JudgmentResearch.create({
+      matterId, draftId: draft.id, tenantId: matter.tenantId, query: generation.judgmentResearch.query,
+      jurisdictionState: matter.jurisdiction.state, summary: generation.judgmentResearch.result.summary,
+      judgments: generation.judgmentResearch.result.judgments, verifiedSourceUrls: generation.judgmentResearch.result.verifiedSourceUrls,
+      searchesUsed: generation.judgmentResearch.result.searchesUsed, modelUsed: generation.judgmentResearch.result.modelUsed, requestedBy: user.id,
+    });
+  }
+
+  await logAudit({
+    tenantId: user.tenantId, actorId: user.id, action: "draft.generate", entityType: "draft", entityId: draft.id,
+    metadata: { mode: generation.mode, coverageScore, judgmentsFound: generation.judgmentResearch?.result.judgments.length ?? 0 },
+  });
 
   return NextResponse.json({ draft, verification });
 }
