@@ -116,10 +116,20 @@ Rules:
   try {
     response = await client.messages.create({
       model: process.env.MLS_MODEL_PRIMARY_ANTHROPIC || "claude-sonnet-5",
-      max_tokens: 4000,
+      max_tokens: 6000,
       system,
       messages: [{ role: "user", content: userContent }],
       tools: [webSearchTool(opts.maxSearches ?? DEFAULT_MAX_SEARCHES)],
+      // Explicitly disabled — this model defaults to adaptive extended thinking,
+      // which interleaves "thinking" blocks between each search round. Across a
+      // multi-search tool-use loop that burns through max_tokens fast, leaving
+      // nothing for the final JSON (confirmed in production: stop_reason
+      // "max_tokens" with the last block cut off mid-"thinking", never reaching
+      // a text block at all). Same root cause as the earlier consultation-chat
+      // empty-reply bug — this call bypasses the shared completeText() wrapper
+      // (it needs the web_search tool, which that wrapper doesn't support) so
+      // it needed the same fix applied directly.
+      thinking: { type: "disabled" },
     });
   } catch (err) {
     throw new JudgmentResearchError(`Judicial research failed: ${err instanceof Error ? err.message : "unknown error"}`);
