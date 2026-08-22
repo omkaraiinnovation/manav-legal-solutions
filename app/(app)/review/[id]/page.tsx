@@ -1,8 +1,10 @@
 import { TopBar } from "@/components/shell/TopBar";
 import { VerificationBadge, TrustLevelBadge } from "@/components/ui/Badges";
 import { ReviewActionBar } from "@/components/review/ReviewActionBar";
+import { JudgmentEnhancementPanel } from "@/components/review/JudgmentEnhancementPanel";
 import { getCurrentUser } from "@/lib/session";
 import { Drafts, DraftCitations, Matters, DocumentTypes, Provisions, Acts, CaseLaws, ReviewActions } from "@/lib/db/repo";
+import { JudgmentResearch } from "@/lib/db/judgment-repo";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { formatDateDisplay } from "@/lib/legal/date-utils";
@@ -13,10 +15,14 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
   const draft = await Drafts.get(id);
   if (!draft) notFound();
 
-  const [matter, documentType, citations, history] = await Promise.all([
+  const [matter, documentType, citations, history, judgmentRows] = await Promise.all([
     Matters.get(draft.matterId), DocumentTypes.get(draft.documentTypeId),
-    DraftCitations.byDraft(id), ReviewActions.byDraft(id),
+    DraftCitations.byDraft(id), ReviewActions.byDraft(id), JudgmentResearch.byDraft(id),
   ]);
+  const judgmentReport = judgmentRows.length > 0 ? {
+    issuesAnalyzed: judgmentRows.map((r) => ({ issue: r.query, actSectionContext: r.actSectionContext, draftExcerpt: r.draftExcerpt ?? "" })),
+    suggestions: judgmentRows.map((r) => ({ issue: { issue: r.query, actSectionContext: r.actSectionContext, draftExcerpt: r.draftExcerpt ?? "" }, judgments: r.judgments, summary: r.summary })),
+  } : null;
   const provisionCache = new Map(await Promise.all(
     citations.filter((c) => c.provisionId).map(async (c) => [c.provisionId!, await Provisions.get(c.provisionId!)] as const)
   ));
@@ -82,6 +88,10 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
 
           <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">Review Action</div>
           <ReviewActionBar draftId={id} />
+
+          <div className="mt-6 border-t pt-5" style={{ borderColor: "var(--hairline)" }}>
+            <JudgmentEnhancementPanel draftId={id} initial={judgmentReport} />
+          </div>
 
           {history.length > 0 && (
             <div className="mt-6">

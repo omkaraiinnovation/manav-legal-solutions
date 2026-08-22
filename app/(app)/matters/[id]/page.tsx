@@ -7,15 +7,17 @@ import { DocumentUpload } from "@/components/documents/DocumentUpload";
 import { QaPanel } from "@/components/documents/QaPanel";
 import { EvidencePanel } from "@/components/matters/EvidencePanel";
 import { SmartSearchPanel } from "@/components/matters/SmartSearchPanel";
+import { JudgmentResearchPanel } from "@/components/matters/JudgmentResearchPanel";
 import { getCurrentUser } from "@/lib/session";
 import { Matters, MatterParties, ChronologyEvents, Deadlines, Drafts } from "@/lib/db/repo";
 import { Documents, QaHistory } from "@/lib/db/documents-repo";
 import { EvidenceAnalyses } from "@/lib/db/evidence-repo";
+import { JudgmentResearch } from "@/lib/db/judgment-repo";
 import { runApplicableLawSweep } from "@/lib/agents/applicable-law-agent";
 import { computeCoverageAudit } from "@/lib/legal/coverage";
 import { formatDateDisplay, daysUntil } from "@/lib/legal/date-utils";
 import { notFound } from "next/navigation";
-import { Gavel, FileText, Users2, CheckCircle2, XCircle, MessagesSquare, SearchCode, ShieldAlert } from "lucide-react";
+import { Gavel, FileText, Users2, CheckCircle2, XCircle, MessagesSquare, SearchCode, ShieldAlert, Landmark } from "lucide-react";
 
 export default async function MatterDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,7 +25,7 @@ export default async function MatterDetailPage({ params }: { params: Promise<{ i
   const matter = await Matters.get(id);
   if (!matter) notFound();
 
-  const [parties, chronology, deadlines, drafts, documents, qaHistory, evidenceAnalysis, sweep, coverage] = await Promise.all([
+  const [parties, chronology, deadlines, drafts, documents, qaHistory, evidenceAnalysis, judgmentHistory, sweep, coverage] = await Promise.all([
     MatterParties.byMatter(id),
     ChronologyEvents.byMatter(id),
     Deadlines.byMatter(id),
@@ -31,6 +33,7 @@ export default async function MatterDetailPage({ params }: { params: Promise<{ i
     Documents.byMatter(id),
     QaHistory.byMatter(id),
     EvidenceAnalyses.latestForMatter(id),
+    JudgmentResearch.byMatter(id),
     runApplicableLawSweep(matter.facts, matter.jurisdiction, matter.domains),
     computeCoverageAudit(matter),
   ]);
@@ -84,6 +87,12 @@ export default async function MatterDetailPage({ params }: { params: Promise<{ i
         <section>
           <SectionHeader eyebrow="Evidence Intelligence" title="Fact Matrix & Contradiction Check" action={<span className="flex items-center gap-1 text-xs text-ink-faint"><ShieldAlert size={12} /> facts + documents cross-referenced</span>} />
           <EvidencePanel matterId={id} initial={evidenceAnalysis ?? null} />
+        </section>
+
+        {/* Judgment Intelligence — Supreme Court + High Court research */}
+        <section>
+          <SectionHeader eyebrow="Judicial Intelligence" title="Supreme Court & High Court Research" action={<span className="flex items-center gap-1 text-xs text-ink-faint"><Landmark size={12} /> live judicial research</span>} />
+          <JudgmentResearchPanel matterId={id} initial={judgmentHistory[0] ?? null} />
         </section>
 
         {/* Legal Coverage Score */}
