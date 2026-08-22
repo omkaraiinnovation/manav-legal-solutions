@@ -6,7 +6,7 @@
  * silently trusted.
  */
 import { Acts, Provisions, CaseLaws } from "@/lib/db/repo";
-import type { DraftCitation } from "@/lib/types";
+import type { DraftCitation, Act } from "@/lib/types";
 import type { JudgmentResult } from "./judgment-research-agent";
 
 export interface VerificationFinding {
@@ -19,6 +19,35 @@ export interface VerificationFinding {
 
 const CITATION_PATTERN = /\b(?:Section|S\.|s\.)\s?(\d+[A-Za-z]?(?:\(\d+\))?)\s*,?\s*([A-Za-z][A-Za-z .,'&]{2,40}?(?:Act|Sanhita|Adhiniyam|Code|Constitution))\b/g;
 const EXPLICIT_FLAG_PATTERN = /\[VERIFICATION REQUIRED[^\]]*\]/g;
+
+// Common Indian-legal short forms a drafting agent naturally writes ("NI Act", "IPC", "CrPC")
+// that don't literally appear as a substring of the seeded Act's shortName/fullName — without
+// this, e.g. "NI Act" was matching "Clinical Establishments Act" (raw substring: "ni" happens
+// to appear inside "cliNIcal"), a real false-positive confirmed in production testing.
+const ACT_ALIASES: Record<string, string> = {
+  "ni act": "negotiable instruments act", ni: "negotiable instruments act",
+  ipc: "indian penal code", crpc: "code of criminal procedure", cpc: "code of civil procedure",
+  bns: "bharatiya nyaya sanhita", bnss: "bharatiya nagarik suraksha sanhita", bsa: "bharatiya sakshya adhiniyam",
+  "it act": "information technology act", "poa act": "prevention of atrocities act",
+};
+
+function findMatchingAct(actNameRaw: string, acts: Act[]): Act | undefined {
+  const norm = actNameRaw.trim().toLowerCase();
+  const alias = ACT_ALIASES[norm];
+  if (alias) {
+    const aliasMatch = acts.find((a) => a.shortName.toLowerCase().includes(alias) || a.fullName.toLowerCase().includes(alias));
+    if (aliasMatch) return aliasMatch;
+  }
+  // Whole-word containment only (not raw substring) — a short fragment like "ni" or "act" must
+  // appear as its own word in the candidate's name, never as letters embedded inside another word.
+  const words = norm.split(/\s+/).filter((w) => w.length > 2 && w !== "act");
+  return acts.find((a) => {
+    const shortLower = a.shortName.toLowerCase();
+    const fullLower = a.fullName.toLowerCase();
+    if (shortLower === norm || norm.includes(shortLower)) return true;
+    return words.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(shortLower) || new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(fullLower));
+  });
+}
 /** Loosely matches "Party Name v. Other Party" / "vs." case-name mentions, to catch
  *  citations the drafting agent produced that aren't in the known-case checks below. */
 const CASE_NAME_PATTERN = /\b([A-Z][A-Za-z.&' ]{2,60}?)\s+v\.?s?\.?\s+([A-Z][A-Za-z.&' ]{2,60}?)(?=[,.\n(]|$)/g;
@@ -45,10 +74,7 @@ export async function runVerificationPass(draftContent: string, liveJudgments: J
     const [full, sectionNum, actNameRaw] = match;
     if (seen.has(full)) continue;
     seen.add(full);
-    const actNameNorm = actNameRaw.trim().toLowerCase();
-    const act = acts.find(
-      (a) => actNameNorm.includes(a.shortName.toLowerCase()) || a.shortName.toLowerCase().includes(actNameNorm.split(" ")[0])
-    );
+    const act = findMatchingAct(actNameRaw, acts);
     if (!act) {
       findings.push({ citedText: full, verificationStatus: "flagged", flagReason: `No Act in the knowledge base matches "${actNameRaw.trim()}" — resolve to [VERIFICATION REQUIRED] before this reaches a client.` });
       continue;

@@ -1,7 +1,8 @@
 import { NavLink } from "./NavLink";
+import Link from "next/link";
 import {
   LayoutDashboard, MessageSquareText, ClipboardList, Scale, FolderKanban,
-  FileCheck2, BookOpenText, Users, Settings, UserRound, Gavel,
+  FileCheck2, BookOpenText, Users, Settings, UserRound, Gavel, UploadCloud,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
 
@@ -48,6 +49,20 @@ export function Sidebar({ role }: { role: UserRole }) {
           <div className="text-[11px] text-ink-faint">Pan-India Paralegal OS</div>
         </div>
       </div>
+
+      {role !== "client" && (
+        <Link
+          href="/intake"
+          className="mb-3 flex items-center justify-center gap-2 rounded-[8px] px-3 py-2.5 text-sm font-medium text-white transition-transform duration-150 hover:-translate-y-px active:translate-y-0"
+          style={{
+            backgroundImage: "linear-gradient(160deg, var(--oxblood) 0%, var(--oxblood-deep) 100%)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.16), 0 4px 12px color-mix(in srgb, var(--oxblood) 30%, transparent)",
+          }}
+        >
+          <UploadCloud size={15} />
+          Upload Matter / Add Files
+        </Link>
+      )}
 
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
         {nav.map((item) => (
