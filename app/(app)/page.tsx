@@ -64,17 +64,17 @@ export default async function DashboardPage() {
             </div>
 
             <div className="mt-6 grid grid-cols-3 gap-3">
-              <Link href="/consultation" className="paper-card flex flex-col items-start gap-2 p-4 transition-transform hover:-translate-y-0.5">
+              <Link href="/consultation" className="paper-card lift-on-hover flex flex-col items-start gap-2 p-4">
                 <MessageSquareText size={18} style={{ color: "var(--oxblood)" }} />
                 <div className="text-sm font-medium">Consultation Chat</div>
                 <div className="text-xs text-ink-faint">Mode A — advisory triage</div>
               </Link>
-              <Link href="/intake" className="paper-card flex flex-col items-start gap-2 p-4 transition-transform hover:-translate-y-0.5">
+              <Link href="/intake" className="paper-card lift-on-hover flex flex-col items-start gap-2 p-4">
                 <ClipboardList size={18} style={{ color: "var(--oxblood)" }} />
                 <div className="text-sm font-medium">New Matter Intake</div>
                 <div className="text-xs text-ink-faint">Structured client intake</div>
               </Link>
-              <Link href="/laws-may-apply" className="paper-card flex flex-col items-start gap-2 p-4 transition-transform hover:-translate-y-0.5">
+              <Link href="/laws-may-apply" className="paper-card lift-on-hover flex flex-col items-start gap-2 p-4">
                 <Scale size={18} style={{ color: "var(--oxblood)" }} />
                 <div className="text-sm font-medium">What Laws May Apply?</div>
                 <div className="text-xs text-ink-faint">Standalone law sweep</div>
@@ -116,7 +116,10 @@ export default async function DashboardPage() {
                       <span className="font-medium">{count}</span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--paper-sunken)" }}>
-                      <div className="h-full rounded-full" style={{ width: `${(count / matters.length) * 100}%`, background: "var(--oxblood)" }} />
+                      <div
+                        className="h-full rounded-full transition-[width] duration-500 ease-out"
+                        style={{ width: `${(count / matters.length) * 100}%`, backgroundImage: "linear-gradient(90deg, var(--oxblood-deep), var(--oxblood))" }}
+                      />
                     </div>
                   </div>
                 ))}

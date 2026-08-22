@@ -37,6 +37,8 @@
   --radius-lg: 16px;
   --shadow-card: 0 1px 2px rgba(33, 28, 22, 0.06), 0 4px 16px rgba(33, 28, 22, 0.06);
   --shadow-raised: 0 2px 6px rgba(33, 28, 22, 0.1), 0 12px 32px rgba(33, 28, 22, 0.1);
+  --shadow-hover: 0 4px 10px rgba(33, 28, 22, 0.1), 0 18px 44px rgba(33, 28, 22, 0.14);
+  --shadow-inset-hairline: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 
   --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
   --font-body: var(--font-public-sans), "Segoe UI", sans-serif;
@@ -75,6 +77,8 @@
 
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
     --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.45);
+    --shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.45), 0 22px 56px rgba(0, 0, 0, 0.5);
+    --shadow-inset-hairline: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 }
 
@@ -108,6 +112,8 @@
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
   --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.45);
+  --shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.45), 0 22px 56px rgba(0, 0, 0, 0.5);
+  --shadow-inset-hairline: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 * { box-sizing: border-box; }
@@ -204,11 +210,15 @@ select option:focus {
 ::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
 
-/* Seal ring — used for the verification / trust badges (evokes an official stamp) */
+/* Seal ring — used for the verification / trust badges and the brand mark
+   (evokes an official embossed stamp). A faint radial sits behind it so the
+   mark reads as pressed into the surface rather than flat-printed on it. */
 .seal-ring {
   border: 1.5px solid currentColor;
   border-radius: 999px;
   position: relative;
+  background:
+    radial-gradient(circle at 30% 25%, color-mix(in srgb, currentColor 14%, transparent), transparent 70%);
 }
 .seal-ring::before {
   content: "";
@@ -217,6 +227,19 @@ select option:focus {
   border: 1px dashed currentColor;
   border-radius: 999px;
   opacity: 0.5;
+}
+
+/* Elevation utility — a considered hover lift for anything clickable that
+   isn't already a Button (cards, nav tiles, list rows). Kept as one shared
+   class so the timing/easing/shadow trio stays consistent site-wide rather
+   than each page inventing its own hover treatment. */
+.lift-on-hover {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+.lift-on-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: color-mix(in srgb, var(--oxblood) 25%, var(--hairline));
 }
 
 @keyframes rise {
@@ -236,6 +259,25 @@ select option:focus {
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
+}
+
+/* Premium primary-surface treatment: a faint diagonal sheen plus a hairline
+   inner highlight, for the handful of surfaces that should read as the most
+   important thing on the page (the login panel, a hero stat). Deliberately
+   subtle — this is a legal-gazette aesthetic, not a consumer app, so
+   restraint matters more than shine. Defined after .paper-card so its
+   richer box-shadow wins when both classes sit on the same element. */
+.premium-sheen {
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-inset-hairline), var(--shadow-raised);
+}
+.premium-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, color-mix(in srgb, white 14%, transparent) 0%, transparent 32%);
+  pointer-events: none;
 }
 
 .text-ink-soft { color: var(--ink-soft); }

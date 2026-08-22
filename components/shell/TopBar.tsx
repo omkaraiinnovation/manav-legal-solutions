@@ -22,7 +22,10 @@ export function TopBar({ currentUser, title, subtitle }: { currentUser: User; ti
           }}
           title={live ? "A live LLM provider is configured — agents call it for real" : "No LLM API key set — agents run in deterministic mock mode, grounded in the seeded knowledge base"}
         >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "currentColor" }} />
+          <span className="relative flex h-1.5 w-1.5">
+            {live && <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" style={{ background: "currentColor" }} />}
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: "currentColor" }} />
+          </span>
           {live ? "Live AI Mode" : "Mock AI Mode"}
         </span>
         <UserMenu user={currentUser} />

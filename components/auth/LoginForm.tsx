@@ -57,14 +57,18 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
   }
 
   return (
-    <div className="paper-card animate-rise p-6">
+    <div className="paper-card premium-sheen p-6">
       <div className="mb-5 flex rounded-[8px] border p-1" style={{ borderColor: "var(--hairline)" }}>
         {(["login", "signup"] as const).map((m) => (
           <button
             key={m}
             onClick={() => setMode(m)}
-            className="flex-1 rounded-[6px] py-1.5 text-sm font-medium transition-colors"
-            style={mode === m ? { background: "var(--oxblood)", color: "white" } : { color: "var(--ink-soft)" }}
+            className="flex-1 rounded-[6px] py-1.5 text-sm font-medium transition-all duration-150"
+            style={
+              mode === m
+                ? { backgroundImage: "linear-gradient(160deg, var(--oxblood) 0%, var(--oxblood-deep) 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.16)", color: "white" }
+                : { color: "var(--ink-soft)" }
+            }
           >
             {m === "login" ? "Sign In" : "Create Account"}
           </button>
@@ -96,8 +100,11 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-[8px] py-2.5 text-sm font-medium text-white disabled:opacity-50"
-          style={{ background: "var(--oxblood)" }}
+          className="flex w-full items-center justify-center gap-2 rounded-[8px] py-2.5 text-sm font-medium text-white transition-transform duration-150 hover:-translate-y-px active:translate-y-0 disabled:pointer-events-none disabled:opacity-50"
+          style={{
+            backgroundImage: "linear-gradient(160deg, var(--oxblood) 0%, var(--oxblood-deep) 100%)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.16), 0 6px 16px color-mix(in srgb, var(--oxblood) 30%, transparent)",
+          }}
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : mode === "login" ? <LogIn size={15} /> : <UserPlus size={15} />}
           {mode === "login" ? "Sign In" : "Create Account"}
