@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Send, Loader2, Sparkles, Paperclip, Mic, Square, X, AlertTriangle, FileText, Image as ImageIcon, Music, Video } from "lucide-react";
 import type { Jurisdiction, IndiaStateOrUT } from "@/lib/types";
 import { INDIA_STATES_AND_UTS } from "@/lib/types";
@@ -135,7 +136,7 @@ export function ChatPanel({ matterId }: { matterId?: string }) {
               >
                 {m.role === "assistant" ? (
                   <div className="prose-legal">
-                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                   </div>
                 ) : (
                   m.content

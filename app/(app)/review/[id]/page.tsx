@@ -7,6 +7,7 @@ import { Drafts, DraftCitations, Matters, DocumentTypes, Provisions, Acts, CaseL
 import { JudgmentResearch } from "@/lib/db/judgment-repo";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { formatDateDisplay } from "@/lib/legal/date-utils";
 
 export default async function ReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -42,7 +43,7 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
         <div className="border-r p-6" style={{ borderColor: "var(--hairline)" }}>
           <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">AI Draft</div>
           <div className="paper-card prose-legal p-6 text-sm leading-relaxed">
-            <ReactMarkdown>{draft.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{draft.content}</ReactMarkdown>
           </div>
         </div>
 
