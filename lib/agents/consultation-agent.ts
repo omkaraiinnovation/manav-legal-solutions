@@ -49,8 +49,11 @@ export async function runConsultation(input: ConsultationInput): Promise<Consult
       model: "primary",
       // Bullet-point breakdowns (BNS+IPC dual-regime cross-references, multi-offence
       // fact patterns) run longer than the dense table-style output they replaced —
-      // 1400 was truncating real answers mid-sentence on exactly these queries.
-      maxTokens: 3000,
+      // 1400 was truncating real answers mid-sentence on exactly these queries, and
+      // a genuinely dense 5-offence test case still hit 3000. There's timeout
+      // headroom (well under 60s even at this size), so budget for it rather than
+      // relying solely on the truncation notice to paper over an undersized cap.
+      maxTokens: 4500,
     });
     return { reply, citedProvisionIds, mode: "live" };
   }
