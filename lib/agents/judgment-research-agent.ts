@@ -145,7 +145,20 @@ Rules:
   let parsed: any;
   try {
     parsed = JSON.parse(extractJson(finalText));
-  } catch {
+  } catch (parseErr) {
+    // Diagnostic only — never logs the full finalText (could contain user-supplied
+    // matter facts), just enough to tell "truncated mid-JSON" from "not JSON at all".
+    console.error(
+      "[judgment-research] Could not parse final text as JSON.",
+      JSON.stringify({
+        stopReason: response.stop_reason,
+        finalTextLength: finalText.length,
+        finalTextStart: finalText.slice(0, 200),
+        finalTextEnd: finalText.slice(-200),
+        parseErrorMessage: parseErr instanceof Error ? parseErr.message : String(parseErr),
+        contentBlockTypes: response.content.map((b) => b.type),
+      })
+    );
     throw new JudgmentResearchError("The judicial research response could not be parsed as structured data. Please try again — this can happen with unusually broad research topics.");
   }
 
