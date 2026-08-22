@@ -89,7 +89,7 @@ Rules:
 [SOURCE EXCERPTS]
 ${contextBlock}`;
 
-  const rawAnswer = await completeText({ system, messages: [{ role: "user", content: question }], model: "primary", maxTokens: 900 });
+  const rawAnswer = await completeText({ system, messages: [{ role: "user", content: question }], model: "primary", maxTokens: 1800 });
 
   const soundsInsufficient = /information is (unavailable|not available|insufficient)|cannot (be )?answer|no (relevant )?information/i.test(rawAnswer);
   const confidence: QaAnswer["confidence"] = soundsInsufficient ? "partial" : relevantDocChunks.length > 0 ? "grounded" : "partial";

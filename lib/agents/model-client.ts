@@ -93,7 +93,7 @@ export async function completeText(opts: CompleteOptions): Promise<string> {
         JSON.stringify({ stopReason: res.stop_reason, blockTypes: res.content.map((b) => b.type), usage: res.usage })
       );
     }
-    return text;
+    return appendTruncationNotice(text, res.stop_reason === "max_tokens");
   }
 
   // OpenAI
@@ -102,5 +102,15 @@ export async function completeText(opts: CompleteOptions): Promise<string> {
     max_tokens: opts.maxTokens ?? 2000,
     messages: [{ role: "system", content: opts.system }, ...opts.messages.map((m) => ({ role: m.role, content: m.content }))],
   });
-  return res.choices[0]?.message?.content ?? "";
+  const choice = res.choices[0];
+  return appendTruncationNotice(choice?.message?.content ?? "", choice?.finish_reason === "length");
+}
+
+/** A response cut off by the token budget mid-sentence is worse than useless if presented as
+ *  complete — the reader has no way to tell a truncated answer from a finished one. Rather than
+ *  rely on every call site picking a large-enough maxTokens forever, this makes truncation
+ *  visible wherever it happens instead of silently handing back a sentence that stops mid-word. */
+function appendTruncationNotice(text: string, wasTruncated: boolean): string {
+  if (!wasTruncated || !text.trim()) return text;
+  return `${text}\n\n*[Response was cut short by the length limit. Please ask a follow-up — e.g. "please continue" — to get the rest.]*`;
 }

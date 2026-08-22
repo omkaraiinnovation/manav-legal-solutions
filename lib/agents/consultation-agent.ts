@@ -47,7 +47,10 @@ export async function runConsultation(input: ConsultationInput): Promise<Consult
       system,
       messages: [...input.history, { role: "user", content: input.userMessage }],
       model: "primary",
-      maxTokens: 1400,
+      // Bullet-point breakdowns (BNS+IPC dual-regime cross-references, multi-offence
+      // fact patterns) run longer than the dense table-style output they replaced —
+      // 1400 was truncating real answers mid-sentence on exactly these queries.
+      maxTokens: 3000,
     });
     return { reply, citedProvisionIds, mode: "live" };
   }
