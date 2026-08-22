@@ -4,7 +4,7 @@ import { Drafts, Matters, logAudit } from "@/lib/db/repo";
 import { JudgmentResearch } from "@/lib/db/judgment-repo";
 import { runJudgmentEnhancementReview } from "@/lib/agents/judgment-review-agent";
 
-export const maxDuration = 60; // up to 3 concurrent web-search research calls
+export const maxDuration = 120; // up to 3 concurrent web-search research calls
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

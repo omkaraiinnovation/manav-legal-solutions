@@ -4,7 +4,7 @@ import { Matters, logAudit } from "@/lib/db/repo";
 import { JudgmentResearch } from "@/lib/db/judgment-repo";
 import { researchJudgments, JudgmentResearchError } from "@/lib/agents/judgment-research-agent";
 
-export const maxDuration = 60; // web_search runs multiple searches sequentially inside one Anthropic call
+export const maxDuration = 120; // web_search runs multiple searches sequentially inside one Anthropic call — needs more room than a typical route
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

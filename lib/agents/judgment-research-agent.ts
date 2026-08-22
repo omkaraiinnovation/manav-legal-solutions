@@ -62,6 +62,8 @@ export function judgmentResearchAvailable(): boolean {
   return !!getAnthropicApiKey();
 }
 
+const DEFAULT_MAX_SEARCHES = 5; // each search is a sequential round-trip inside one Anthropic turn — kept low enough to fit a 60s serverless function
+
 export async function researchJudgments(opts: { query: string; jurisdictionState?: string; actContext?: string; maxSearches?: number }): Promise<JudgmentResearchResult> {
   const apiKey = getAnthropicApiKey();
   if (!apiKey) {
@@ -117,7 +119,7 @@ Rules:
       max_tokens: 4000,
       system,
       messages: [{ role: "user", content: userContent }],
-      tools: [webSearchTool(opts.maxSearches ?? 8)],
+      tools: [webSearchTool(opts.maxSearches ?? DEFAULT_MAX_SEARCHES)],
     });
   } catch (err) {
     throw new JudgmentResearchError(`Judicial research failed: ${err instanceof Error ? err.message : "unknown error"}`);

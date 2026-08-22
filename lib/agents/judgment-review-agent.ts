@@ -71,7 +71,7 @@ export async function runJudgmentEnhancementReview(draftContent: string, jurisdi
 
   // Researched concurrently, each with a reduced search budget, so the combined
   // pipeline fits inside one serverless function's time limit.
-  const perIssueSearches = issues.length > 2 ? 4 : 6;
+  const perIssueSearches = issues.length > 2 ? 3 : 4;
   const suggestions = await Promise.all(
     issues.map(async (issue): Promise<JudgmentEnhancementSuggestion> => {
       try {
